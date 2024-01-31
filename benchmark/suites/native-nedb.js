@@ -103,7 +103,7 @@ const bench4 = benchmark.createSuite(`NeDB: Entity getting (${COUNT})`);
 
 	bench.add("db.find", done => {
 		const entity = docs[Math.floor(Math.random() * docs.length)];
-		db.find({ _id: entity.id }).exec(done);
+		db.find({ id: entity.id }).exec(done);
 	});
 })(bench4);
 
@@ -121,7 +121,7 @@ const bench5 = benchmark.createSuite(`NeDB: Entity updating (${COUNT})`);
 		const entity = docs[Math.floor(Math.random() * docs.length)];
 		const newStatus = Math.round(Math.random());
 		db.update(
-			{ _id: entity._id },
+			{ id: entity.id },
 			{
 				$set: {
 					status: newStatus
@@ -146,7 +146,7 @@ const bench6 = benchmark.createSuite(`NeDB: Entity replacing (${COUNT})`);
 	bench.ref("db.update", done => {
 		const entity = docs[Math.floor(Math.random() * docs.length)];
 		entity.status = Math.round(Math.random());
-		db.update({ _id: entity._id }, entity, { returnUpdatedDocs: true }, done);
+		db.update({ id: entity.id }, entity, { returnUpdatedDocs: true }, done);
 	});
 })(bench6);
 
@@ -162,7 +162,7 @@ const bench7 = benchmark.createSuite(`NeDB: Entity deleting (${COUNT})`);
 
 	bench.ref("db.remove", done => {
 		const entity = docs[Math.floor(Math.random() * docs.length)];
-		db.remove({ _id: entity._id }, done);
+		db.remove({ id: entity._id }, done);
 	});
 })(bench7);
 

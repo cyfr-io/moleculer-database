@@ -1,29 +1,33 @@
 module.exports = {
+	root: true,
 	env: {
 		node: true,
 		commonjs: true,
-		es6: true,
 		jquery: false,
 		jest: true,
 		jasmine: true
 	},
-	extends: ["eslint:recommended", "plugin:security/recommended", "plugin:prettier/recommended"],
+	extends: [
+		"eslint:recommended",
+		"plugin:jest/recommended",
+		"plugin:security/recommended",
+		"prettier"
+	],
+	plugins: ["jest", "security", "prettier"],
 	parserOptions: {
 		sourceType: "module",
-		ecmaVersion: 2018
+		ecmaVersion: "latest"
 	},
-	plugins: ["node", "promise", "security"],
 	rules: {
+		"global-require": ["off"],
+		"import/order": ["off"],
 		"no-var": ["error"],
-		"no-console": ["warn"],
-		"no-unused-vars": ["warn"],
-		"no-trailing-spaces": ["error"],
-		"security/detect-object-injection": ["off"],
-		"security/detect-non-literal-require": ["off"],
-		"security/detect-non-literal-fs-filename": ["off"],
-		"no-process-exit": ["off"],
-		"node/no-unpublished-require": 0,
-		"require-atomic-updates": 0,
-		"object-curly-spacing": ["warn", "always"]
+		"no-undef": ["off"],
+		"no-console": ["off"],
+		"no-unused-vars": ["off"],
+		"no-param-reassign": ["off"],
+		"no-underscore-dangle": ["off"],
+		"detect-non-literal-fs-filename": ["off"],
+		"prettier/prettier": ["error"]
 	}
 };

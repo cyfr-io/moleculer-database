@@ -4,37 +4,44 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
 
 const PARAMS_FIELDS = [
-	{ type: "string", optional: true },
-	{ type: "array", optional: true, items: "string" }
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
+];
+
+const PARAMS_FILTER = [[{ optional: true, type: 'object' }]];
+
+const PARAMS_SEARCH = [
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
 ];
 
 const PARAMS_SEARCHFIELDS = [
-	{ type: "string", optional: true },
-	{ type: "array", optional: true, items: "string" }
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
 ];
 
 const PARAMS_SORT = [
-	{ type: "string", optional: true },
-	{ type: "array", optional: true, items: "string" }
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
 ];
 
 const PARAMS_POPULATE = [
-	{ type: "string", optional: true },
-	{ type: "array", optional: true, items: "string" }
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
 ];
 
 const PARAMS_SCOPE = [
-	{ type: "boolean", optional: true },
-	{ type: "string", optional: true },
-	{ type: "array", optional: true, items: "string" }
+	{ type: 'boolean', optional: true },
+	{ type: 'string', optional: true },
+	{ type: 'array', optional: true, items: 'string' },
 ];
 
 const PARAMS_QUERY = [
-	{ type: "object", optional: true },
-	{ type: "string", optional: true }
+	{ type: 'object', optional: true },
+	{ type: 'string', optional: true },
 ];
 
 module.exports = function (mixinOpts) {
@@ -43,7 +50,7 @@ module.exports = function (mixinOpts) {
 	const cacheOpts = mixinOpts.cache && mixinOpts.cache.enabled ? mixinOpts.cache : null;
 	const maxLimit = mixinOpts.maxLimit > 0 ? mixinOpts.maxLimit : null;
 
-	const generateCacheOptions = minimalCacheKeys => {
+	const generateCacheOptions = (minimalCacheKeys) => {
 		if (cacheOpts && cacheOpts.enabled) {
 			const keys = Array.from(minimalCacheKeys);
 			if (cacheOpts.additionalKeys) keys.push(...cacheOpts.additionalKeys);
@@ -52,8 +59,8 @@ module.exports = function (mixinOpts) {
 		return null;
 	};
 
-	const actionEnabled = name => {
-		if (typeof mixinOpts.createActions == "object") {
+	const actionEnabled = (name) => {
+		if (typeof mixinOpts.createActions == 'object') {
 			return mixinOpts.createActions[name] !== false;
 		}
 		return mixinOpts.createActions !== false;
@@ -77,44 +84,46 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @returns {Array<Object>} List of found entities.
 	 */
-	if (actionEnabled("find")) {
+	if (actionEnabled('find')) {
 		res.find = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "GET /all" : null,
+			rest: mixinOpts.rest ? 'GET /all' : null,
 			cache: generateCacheOptions([
-				"limit",
-				"offset",
-				"fields",
-				"sort",
-				"search",
-				"searchFields",
-				"collation",
-				"scope",
-				"populate",
-				"query"
+				'limit',
+				'offset',
+				'fields',
+				'filter',
+				'sort',
+				'search',
+				'searchFields',
+				'collation',
+				'scope',
+				'populate',
+				'query',
 			]),
 			params: {
 				limit: {
-					type: "number",
+					type: 'number',
 					integer: true,
 					min: 0,
 					max: maxLimit,
 					optional: true,
-					convert: true
+					convert: true,
 				},
-				offset: { type: "number", integer: true, min: 0, optional: true, convert: true },
+				offset: { type: 'number', integer: true, min: 0, optional: true, convert: true },
 				fields: PARAMS_FIELDS,
+				filter: PARAMS_FILTER,
 				sort: PARAMS_SORT,
-				search: { type: "string", optional: true },
+				search: PARAMS_SEARCH,
 				searchFields: PARAMS_SEARCHFIELDS,
-				collation: { type: "object", optional: true },
+				collation: { type: 'object', optional: true },
 				scope: PARAMS_SCOPE,
 				populate: PARAMS_POPULATE,
-				query: PARAMS_QUERY
+				query: PARAMS_QUERY,
 			},
 			async handler(ctx) {
 				return this.findEntities(ctx);
-			}
+			},
 		};
 	}
 
@@ -131,20 +140,21 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @returns {Number} Count of found entities.
 	 */
-	if (actionEnabled("count")) {
+	if (actionEnabled('count')) {
 		res.count = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "GET /count" : null,
-			cache: generateCacheOptions(["search", "searchFields", "scope", "query"]),
+			rest: mixinOpts.rest ? 'GET /count' : null,
+			cache: generateCacheOptions(['filter', 'search', 'searchFields', 'scope', 'query']),
 			params: {
-				search: { type: "string", optional: true },
+				filter: PARAMS_FILTER,
+				search: PARAMS_SEARCH,
 				searchFields: PARAMS_SEARCHFIELDS,
 				scope: PARAMS_SCOPE,
-				query: PARAMS_QUERY
+				query: PARAMS_QUERY,
 			},
 			async handler(ctx) {
 				return this.countEntities(ctx);
-			}
+			},
 		};
 	}
 
@@ -166,40 +176,43 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @returns {Object} List of found entities and total count.
 	 */
-	if (actionEnabled("list")) {
+	if (actionEnabled('list')) {
 		res.list = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "GET /" : null,
+			rest: mixinOpts.rest ? 'GET /' : null,
 			cache: generateCacheOptions([
-				"page",
-				"pageSize",
-				"fields",
-				"sort",
-				"search",
-				"searchFields",
-				"collation",
-				"scope",
-				"populate",
-				"query"
+				'page',
+				'pageSize',
+				'fields',
+				'filter',
+				'filterIn',
+				'sort',
+				'search',
+				'searchFields',
+				'collation',
+				'scope',
+				'populate',
+				'query',
 			]),
 			params: {
-				page: { type: "number", integer: true, min: 1, optional: true, convert: true },
+				page: { type: 'number', integer: true, min: 1, optional: true, convert: true },
 				pageSize: {
-					type: "number",
+					type: 'number',
 					integer: true,
 					min: 1,
 					max: maxLimit,
 					optional: true,
-					convert: true
+					convert: true,
 				},
 				fields: PARAMS_FIELDS,
+				filter: PARAMS_FILTER,
 				sort: PARAMS_SORT,
-				search: { type: "string", optional: true },
+				search: PARAMS_SEARCH,
 				searchFields: PARAMS_SEARCHFIELDS,
-				collation: { type: "object", optional: true },
+				collation: { type: 'object', optional: true },
 				scope: PARAMS_SCOPE,
 				populate: PARAMS_POPULATE,
-				query: PARAMS_QUERY
+				query: PARAMS_QUERY,
 			},
 			async handler(ctx) {
 				const params = this.sanitizeParams(ctx.params, { list: true });
@@ -216,9 +229,9 @@ module.exports = function (mixinOpts) {
 					// Page size
 					pageSize: params.pageSize,
 					// Total pages
-					totalPages: Math.floor((total + params.pageSize - 1) / params.pageSize)
+					totalPages: Math.floor((total + params.pageSize - 1) / params.pageSize),
 				};
-			}
+			},
 		};
 	}
 
@@ -237,20 +250,20 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @throws {EntityNotFoundError} - 404 Entity not found
 	 */
-	if (actionEnabled("get")) {
+	if (actionEnabled('get')) {
 		res.get = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "GET /:id" : null,
-			cache: generateCacheOptions(["id", "fields", "scope", "populate"]),
+			rest: mixinOpts.rest ? 'GET /:id' : null,
+			cache: generateCacheOptions(['id', 'fields', 'scope', 'populate']),
 			params: {
 				// The "id" field get from `fields`
 				fields: PARAMS_FIELDS,
 				scope: PARAMS_SCOPE,
-				populate: PARAMS_POPULATE
+				populate: PARAMS_POPULATE,
 			},
 			async handler(ctx) {
 				return this.resolveEntities(ctx, ctx.params, { throwIfNotExist: true });
-			}
+			},
 		};
 	}
 
@@ -270,33 +283,25 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @throws {EntityNotFoundError} - 404 Entity not found
 	 */
-	if (actionEnabled("resolve")) {
+	if (actionEnabled('resolve')) {
 		res.resolve = {
 			visibility: mixinOpts.actionVisibility,
-			cache: generateCacheOptions([
-				"id",
-				"fields",
-				"scope",
-				"populate",
-				"mapping",
-				"throwIfNotExist",
-				"reorderResult"
-			]),
+			cache: generateCacheOptions(['id', 'fields', 'scope', 'populate', 'mapping', 'throwIfNotExist', 'reorderResult']),
 			params: {
 				// The "id" field get from `fields`
 				fields: PARAMS_FIELDS,
 				scope: PARAMS_SCOPE,
 				populate: PARAMS_POPULATE,
-				mapping: { type: "boolean", optional: true },
-				throwIfNotExist: { type: "boolean", optional: true },
-				reorderResult: { type: "boolean", optional: true }
+				mapping: { type: 'boolean', optional: true },
+				throwIfNotExist: { type: 'boolean', optional: true },
+				reorderResult: { type: 'boolean', optional: true },
 			},
 			async handler(ctx) {
 				return this.resolveEntities(ctx, ctx.params, {
 					throwIfNotExist: ctx.params.throwIfNotExist,
-					reorderResult: ctx.params.reorderResult
+					reorderResult: ctx.params.reorderResult,
 				});
-			}
+			},
 		};
 	}
 
@@ -307,14 +312,14 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @returns {Object} Saved entity.
 	 */
-	if (actionEnabled("create")) {
+	if (actionEnabled('create')) {
 		res.create = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "POST /" : null,
+			rest: mixinOpts.rest ? 'POST /' : null,
 			// params: {}, generate from `fields` in the `merged`
 			async handler(ctx) {
 				return this.createEntity(ctx);
-			}
+			},
 		};
 	}
 
@@ -325,14 +330,32 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @returns {Array<Object>} Saved entities.
 	 */
-	if (actionEnabled("createMany")) {
+	if (actionEnabled('createMany')) {
 		res.createMany = {
 			visibility: mixinOpts.actionVisibility,
 			rest: null,
 			// params: {}, generate from `fields` in the `merged`
 			async handler(ctx) {
 				return this.createEntities(ctx, ctx.params, { returnEntities: true });
-			}
+			},
+		};
+	}
+
+	/**
+	 * Updates multiple entities.
+	 *
+	 * @actions
+	 *
+	 * @returns {Array<Object>} Saved entities.
+	 */
+	if (actionEnabled('updateMany')) {
+		res.updateMany = {
+			visibility: mixinOpts.actionVisibility,
+			rest: null,
+			// params: {}, generate from `fields` in the `merged`
+			async handler(ctx) {
+				return this.updateEntities(ctx, ctx.params, { returnEntities: true });
+			},
 		};
 	}
 
@@ -345,14 +368,14 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @throws {EntityNotFoundError} - 404 Entity not found
 	 */
-	if (actionEnabled("update")) {
+	if (actionEnabled('update')) {
 		res.update = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "PATCH /:id" : null,
+			rest: mixinOpts.rest ? 'PATCH /:id' : null,
 			// params: {}, generate from `fields` in the `merged`
 			async handler(ctx) {
 				return this.updateEntity(ctx);
-			}
+			},
 		};
 	}
 
@@ -365,14 +388,14 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @throws {EntityNotFoundError} - 404 Entity not found
 	 */
-	if (actionEnabled("replace")) {
+	if (actionEnabled('replace')) {
 		res.replace = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "PUT /:id" : null,
+			rest: mixinOpts.rest ? 'PUT /:id' : null,
 			// params: {}, generate from `fields` in the `merged`
 			async handler(ctx) {
 				return this.replaceEntity(ctx);
-			}
+			},
 		};
 	}
 
@@ -386,16 +409,16 @@ module.exports = function (mixinOpts) {
 	 *
 	 * @throws {EntityNotFoundError} - 404 Entity not found
 	 */
-	if (actionEnabled("remove")) {
+	if (actionEnabled('remove')) {
 		res.remove = {
 			visibility: mixinOpts.actionVisibility,
-			rest: mixinOpts.rest ? "DELETE /:id" : null,
+			rest: mixinOpts.rest ? 'DELETE /:id' : null,
 			params: {
 				// The "id" field get from `fields`
 			},
 			async handler(ctx) {
 				return this.removeEntity(ctx);
-			}
+			},
 		};
 	}
 

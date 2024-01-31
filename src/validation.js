@@ -4,16 +4,16 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
 
-const { Context } = require("moleculer"); // eslint-disable-line no-unused-vars
-const { ServiceSchemaError, ValidationError } = require("moleculer").Errors;
-const _ = require("lodash");
-const { generateValidatorSchemaFromFields } = require("./schema");
+const { Context } = require('moleculer'); // eslint-disable-line no-unused-vars
+const { ServiceSchemaError, ValidationError } = require('moleculer').Errors;
+const _ = require('lodash');
+const { generateValidatorSchemaFromFields } = require('./schema');
 
-const Validator = require("fastest-validator");
+const Validator = require('fastest-validator');
 const validator = new Validator({
-	useNewCustomCheckerFunction: true
+	useNewCustomCheckerFunction: true,
 });
 
 module.exports = function (mixinOpts) {
@@ -38,27 +38,27 @@ module.exports = function (mixinOpts) {
 				this.$validators = {
 					create: validator.compile(
 						generateValidatorSchemaFromFields(this.settings.fields, {
-							type: "create",
-							enableParamsConversion: mixinOpts.enableParamsConversion
-						})
+							type: 'create',
+							enableParamsConversion: mixinOpts.enableParamsConversion,
+						}),
 					),
 					update: validator.compile(
 						generateValidatorSchemaFromFields(this.settings.fields, {
-							type: "update",
-							enableParamsConversion: mixinOpts.enableParamsConversion
-						})
+							type: 'update',
+							enableParamsConversion: mixinOpts.enableParamsConversion,
+						}),
 					),
 					replace: validator.compile(
 						generateValidatorSchemaFromFields(this.settings.fields, {
-							type: "replace",
-							enableParamsConversion: mixinOpts.enableParamsConversion
-						})
-					)
+							type: 'replace',
+							enableParamsConversion: mixinOpts.enableParamsConversion,
+						}),
+					),
 				};
 			}
 
-			if (!this.$primaryField) this.$primaryField = { name: "_id", columnName: "_id" };
-			if (this.$softDelete) this.logger.debug("Soft delete mode: ENABLED");
+			if (!this.$primaryField) this.$primaryField = { name: 'id', columnName: 'id' };
+			if (this.$softDelete) this.logger.debug('Soft delete mode: ENABLED');
 			this.logger.debug(`Primary key field`, this.$primaryField);
 		},
 
@@ -69,7 +69,7 @@ module.exports = function (mixinOpts) {
 					if (def === false) return;
 
 					// Shorthand format { title: true } => { title: {} }
-					if (def === true) def = { type: "any" };
+					if (def === true) def = { type: 'any' };
 
 					// Parse shorthand format: { title: "string|min:3" } => { title: { type: "string", min: 3 } }
 					if (_.isString(def)) def = validator.parseShortHand(def);
@@ -82,6 +82,9 @@ module.exports = function (mixinOpts) {
 
 					if (!field.columnName) field.columnName = field.name;
 					if (!field.columnType) field.columnType = field.type;
+
+					if (!field.search) field.search = false;
+					if (!field.filter) field.filter = false;
 
 					if (field.primaryKey === true) this.$primaryField = field;
 
@@ -105,34 +108,34 @@ module.exports = function (mixinOpts) {
 							if (!field.populate.action && !field.populate.handler) {
 								throw new ServiceSchemaError(
 									`Invalid 'populate' definition in '${this.fullName}' service. Missing 'action' or 'handler'.`,
-									{ populate: field.populate }
+									{ populate: field.populate },
 								);
 							}
 						} else {
 							throw new ServiceSchemaError(
 								`Invalid 'populate' definition in '${this.fullName}' service. It should be a 'Function', 'String' or 'Object'.`,
-								{ populate: field.populate }
+								{ populate: field.populate },
 							);
 						}
 					}
 
 					// Handle nested object properties
-					if (field.type == "object" && _.isPlainObject(field.properties)) {
+					if (field.type == 'object' && _.isPlainObject(field.properties)) {
 						field.itemProperties = this._processFieldObject(field.properties);
 					}
 
 					// Handle array items
-					if (field.type == "array" && _.isObject(field.items)) {
+					if (field.type == 'array' && _.isObject(field.items)) {
 						let itemsDef = field.items;
 						if (_.isString(field.items)) itemsDef = { type: field.items };
 
-						if (itemsDef.type == "object" && itemsDef.properties) {
+						if (itemsDef.type == 'object' && itemsDef.properties) {
 							field.itemProperties = this._processFieldObject(itemsDef.properties);
 						}
 					}
 
 					return field;
-				})
+				}),
 			);
 		},
 
@@ -178,26 +181,16 @@ module.exports = function (mixinOpts) {
 			const res = [];
 			await Promise.all(
 				_.compact(
-					fields.map(field => {
+					fields.map((field) => {
 						if (!opts.isWrite && field.readPermission) {
-							return this.checkFieldAuthority(
-								ctx,
-								field.readPermission,
-								params,
-								field
-							).then(has => (has ? res.push(field) : null));
+							return this.checkFieldAuthority(ctx, field.readPermission, params, field).then((has) => (has ? res.push(field) : null));
 						} else if (field.permission) {
-							return this.checkFieldAuthority(
-								ctx,
-								field.permission,
-								params,
-								field
-							).then(has => (has ? res.push(field) : null));
+							return this.checkFieldAuthority(ctx, field.permission, params, field).then((has) => (has ? res.push(field) : null));
 						}
 
 						res.push(field);
-					})
-				)
+					}),
+				),
 			);
 			return res;
 		},
@@ -210,10 +203,10 @@ module.exports = function (mixinOpts) {
 		 * @param {Object?} opts
 		 */
 		async validateParams(ctx, params, opts = {}) {
-			const type = opts.type || "create";
+			const type = opts.type || 'create';
 
 			// Drop all fields if hard delete
-			if (type == "remove" && !this.$softDelete) {
+			if (type == 'remove' && !this.$softDelete) {
 				return {};
 			}
 
@@ -222,7 +215,7 @@ module.exports = function (mixinOpts) {
 				return Object.assign({}, params);
 			}
 
-			const span = this.startSpan(ctx, "Validating", { params });
+			const span = this.startSpan(ctx, 'Validating', { params });
 
 			const fields = Array.from(this.$fields);
 			const entity = await this._validateObject(ctx, fields, params, opts);
@@ -240,7 +233,7 @@ module.exports = function (mixinOpts) {
 		 * @returns {any}
 		 */
 		_callCustomFunction(fn, args) {
-			fn = typeof fn == "string" ? this[fn] : fn;
+			fn = typeof fn == 'string' ? this[fn] : fn;
 			return fn.apply(this, args);
 		},
 
@@ -254,14 +247,14 @@ module.exports = function (mixinOpts) {
 		 * @returns
 		 */
 		async _validateObject(ctx, fields, params, opts) {
-			const type = opts.type || "create";
+			const type = opts.type || 'create';
 			const oldEntity = opts.entity;
 
 			let entity = {};
 
 			// Removing & Soft delete
-			if (type == "remove" && this.$softDelete) {
-				fields = fields.filter(field => !!field.onRemove);
+			if (type == 'remove' && this.$softDelete) {
+				fields = fields.filter((field) => !!field.onRemove);
 			}
 
 			// Validating (only the root level)
@@ -271,8 +264,7 @@ module.exports = function (mixinOpts) {
 					const res = check(params);
 					if (res !== true) {
 						this.logger.debug(`Parameter validation error`, res);
-						//console.log(res);
-						throw new ValidationError("Parameters validation error!", null, res);
+						throw new ValidationError('Parameters validation error!', null, res);
 					}
 				}
 			}
@@ -291,54 +283,45 @@ module.exports = function (mixinOpts) {
 								id: opts.id,
 								operation: type,
 								entity: oldEntity,
-								root: opts.root || params
-							}
+								root: opts.root || params,
+							},
 						]);
 						if (res !== true) {
 							this.logger.debug(`Parameter validation error`, { res, field, value });
-							throw new ValidationError(res, "VALIDATION_ERROR", {
+							throw new ValidationError(res, 'VALIDATION_ERROR', {
 								field: field.name,
-								value
+								value,
 							});
 						}
 					}
 
 					// Nested-object
-					if (field.type == "object" && field.itemProperties) {
+					if (field.type == 'object' && field.itemProperties) {
 						value = await this._validateObject(ctx, field.itemProperties, value, {
 							...opts,
 							nested: true,
-							root: params
+							root: params,
 						});
 					}
 
 					// Array
-					if (field.type == "array") {
+					if (field.type == 'array') {
 						if (!Array.isArray(value)) {
 							this.logger.debug(`Parameter validation error`, { field, value });
-							throw new ValidationError(
-								`The field '${field.name}' must be an Array.`,
-								"VALIDATION_ERROR",
-								{
-									field: field.name,
-									value
-								}
-							);
+							throw new ValidationError(`The field '${field.name}' must be an Array.`, 'VALIDATION_ERROR', {
+								field: field.name,
+								value,
+							});
 						}
 
 						if (field.items) {
 							if (field.itemProperties) {
 								for (let i = 0; i < value.length; i++) {
-									value[i] = await this._validateObject(
-										ctx,
-										field.itemProperties,
-										value[i],
-										{
-											...opts,
-											nested: true,
-											root: params
-										}
-									);
+									value[i] = await this._validateObject(ctx, field.itemProperties, value[i], {
+										...opts,
+										nested: true,
+										root: params,
+									});
 								}
 							} else if (field.items.type) {
 								for (let i = 0; i < value.length; i++) {
@@ -349,27 +332,23 @@ module.exports = function (mixinOpts) {
 					}
 				}
 
-				if (["create", "replace"].includes(type)) {
+				if (['create', 'replace'].includes(type)) {
 					// Required/optional
 					if (field.required) {
 						if ((value === null && !field.nullable) || value === undefined) {
 							this.logger.debug(`Parameter validation error. Field is required`, {
 								field,
-								value
+								value,
 							});
 
-							throw new ValidationError(
-								"Parameters validation error!",
-								"VALIDATION_ERROR",
-								[
-									{
-										type: "required",
-										field: field.name,
-										message: `The '${field.name}' field is required.`,
-										actual: value
-									}
-								]
-							);
+							throw new ValidationError('Parameters validation error!', 'VALIDATION_ERROR', [
+								{
+									type: 'required',
+									field: field.name,
+									message: `The '${field.name}' field is required.`,
+									actual: value,
+								},
+							]);
 						}
 					}
 				}
@@ -381,7 +360,7 @@ module.exports = function (mixinOpts) {
 				value = await sanitizeValue(field, value);
 
 				if (value !== undefined) {
-					if (field.type == "array" || field.type == "object") {
+					if (field.type == 'array' || field.type == 'object') {
 						if (!opts.nestedFieldSupport) {
 							if (Array.isArray(value) || _.isObject(value)) {
 								value = JSON.stringify(value);
@@ -396,11 +375,11 @@ module.exports = function (mixinOpts) {
 
 			const authorizedFields = await this._authorizeFields(fields, ctx, params, {
 				permissive: opts.permissive,
-				isWrite: true
+				isWrite: true,
 			});
 
 			await Promise.all(
-				authorizedFields.map(async field => {
+				authorizedFields.map(async (field) => {
 					let value = _.get(params, field.name);
 
 					// Virtual field
@@ -418,8 +397,8 @@ module.exports = function (mixinOpts) {
 								id: opts.id,
 								operation: type,
 								entity: oldEntity,
-								root: opts.root || params
-							}
+								root: opts.root || params,
+							},
 						]);
 						return setValue(field, value);
 					}
@@ -433,34 +412,34 @@ module.exports = function (mixinOpts) {
 							id: opts.id,
 							operation: type,
 							entity: oldEntity,
-							root: opts.root || params
-						}
+							root: opts.root || params,
+						},
 					];
 
 					// Handlers
 					if (!opts.skipOnHooks) {
-						if (type == "create" && field.onCreate) {
+						if (type == 'create' && field.onCreate) {
 							if (_.isFunction(field.onCreate)) {
 								value = await this._callCustomFunction(field.onCreate, customArgs);
 							} else {
 								value = field.onCreate;
 							}
 							return setValue(field, value);
-						} else if (type == "update" && field.onUpdate) {
+						} else if (type == 'update' && field.onUpdate) {
 							if (_.isFunction(field.onUpdate)) {
 								value = await this._callCustomFunction(field.onUpdate, customArgs);
 							} else {
 								value = field.onUpdate;
 							}
 							return setValue(field, value);
-						} else if (type == "replace" && field.onReplace) {
+						} else if (type == 'replace' && field.onReplace) {
 							if (_.isFunction(field.onReplace)) {
 								value = await this._callCustomFunction(field.onReplace, customArgs);
 							} else {
 								value = field.onReplace;
 							}
 							return setValue(field, value);
-						} else if (type == "remove" && field.onRemove) {
+						} else if (type == 'remove' && field.onRemove) {
 							if (_.isFunction(field.onRemove)) {
 								value = await this._callCustomFunction(field.onRemove, customArgs);
 							} else {
@@ -470,15 +449,12 @@ module.exports = function (mixinOpts) {
 						}
 					}
 
-					if (["create", "replace"].includes(type)) {
+					if (['create', 'replace'].includes(type)) {
 						// Default value
 						if (value === undefined) {
 							if (field.default !== undefined) {
 								if (_.isFunction(field.default)) {
-									value = await this._callCustomFunction(
-										field.default,
-										customArgs
-									);
+									value = await this._callCustomFunction(field.default, customArgs);
 								} else {
 									value = field.default;
 								}
@@ -491,14 +467,10 @@ module.exports = function (mixinOpts) {
 					if (field.readonly && !opts.permissive) return;
 
 					// Immutable (should check the previous value, if not set yet, we should enable)
-					if (
-						["update", "replace"].includes(type) &&
-						field.immutable === true &&
-						!opts.permissive
-					) {
+					if (['update', 'replace'].includes(type) && field.immutable === true && !opts.permissive) {
 						const prevValue = _.get(oldEntity, field.columnName);
 						if (prevValue != null) {
-							if (type == "update") {
+							if (type == 'update') {
 								// Skip on update
 								return;
 							} else {
@@ -509,10 +481,10 @@ module.exports = function (mixinOpts) {
 					}
 
 					await setValue(field, value);
-				})
+				}),
 			);
 
 			return entity;
-		}
+		},
 	};
 };

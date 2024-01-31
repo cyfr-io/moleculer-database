@@ -4,13 +4,14 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
+const util = require('util');
+const _ = require('lodash');
+const { flatten } = require('../utils');
+const BaseAdapter = require('./base');
+const Snowflake = require('../snowflake'); // Import the Snowflake class
 
-const _ = require("lodash");
-const { flatten } = require("../utils");
-const BaseAdapter = require("./base");
-
-let MongoClient, ObjectId;
+let MongoClient, ObjectId, SnowflakeId;
 
 class MongoDBAdapter extends BaseAdapter {
 	/**
@@ -51,25 +52,25 @@ class MongoDBAdapter extends BaseAdapter {
 		}
 
 		try {
-			MongoClient = require("mongodb").MongoClient;
-			ObjectId = require("mongodb").ObjectId;
+			MongoClient = require('mongodb').MongoClient;
+			ObjectId = require('mongodb').ObjectId;
 		} catch (err) {
 			/* istanbul ignore next */
-			this.broker.fatal(
-				"The 'mongodb' package is missing! Please install it with 'npm install mongodb --save' command.",
-				err,
-				true
-			);
+			this.broker.fatal("The 'mongodb' package is missing! Please install it with 'npm install mongodb --save' command.", err, true);
 		}
 
-		this.checkClientLibVersion("mongodb", "^4.0.0");
+		SnowflakeId = new Snowflake({
+			instanceId: this.broker.instanceId,
+		});
+
+		this.checkClientLibVersion('mongodb', '^4.0.0');
 	}
 
 	/**
 	 * Connect adapter to database
 	 */
 	async connect() {
-		const uri = this.opts.uri || "mongodb://localhost:27017";
+		const uri = this.opts.uri || 'mongodb://localhost:27017';
 
 		this.storeKey = `mongodb|${uri}`;
 		this.client = this.getClientFromGlobalStore(this.storeKey);
@@ -77,12 +78,12 @@ class MongoDBAdapter extends BaseAdapter {
 			this.logger.debug(`MongoDB adapter is connecting to '${uri}'...`);
 			this.client = new MongoClient(uri, this.opts.mongoClientOptions);
 
-			this.logger.debug("Store the created MongoDB client", this.storeKey);
+			this.logger.debug('Store the created MongoDB client', this.storeKey);
 			this.setClientToGlobalStore(this.storeKey, this.client);
 
-			this.client.on("open", () => this.logger.info(`MongoDB client has connected.`));
-			this.client.on("close", () => this.logger.warn("MongoDB client has disconnected."));
-			this.client.on("error", err => this.logger.error("MongoDB error.", err));
+			this.client.on('open', () => this.logger.info(`MongoDB client has connected.`));
+			this.client.on('close', () => this.logger.warn('MongoDB client has disconnected.'));
+			this.client.on('error', (err) => this.logger.error('MongoDB error.', err));
 			try {
 				// Connect the client to the server
 				await this.client.connect();
@@ -92,13 +93,13 @@ class MongoDBAdapter extends BaseAdapter {
 				throw err;
 			}
 		} else {
-			this.logger.debug("Using an existing MongoDB client", this.storeKey);
+			this.logger.debug('Using an existing MongoDB client', this.storeKey);
 			if (!this.client.topology || !this.client.topology.isConnected()) {
-				this.logger.debug("Waiting for the connected state of MongoDB client...");
+				this.logger.debug('Waiting for the connected state of MongoDB client...');
 				// This silent timer blocks the process to avoid exiting while wait for connecting
 				const emptyTimer = setInterval(() => {}, 1000);
-				await new this.Promise(resolve => {
-					this.client.once("open", () => {
+				await new this.Promise((resolve) => {
+					this.client.once('open', () => {
 						clearInterval(emptyTimer);
 						resolve();
 					});
@@ -108,16 +109,16 @@ class MongoDBAdapter extends BaseAdapter {
 
 		if (this.opts.dbName) {
 			// Select DB and verify connection
-			this.logger.debug("Selecting database:", this.opts.dbName);
+			this.logger.debug('Selecting database:', this.opts.dbName);
 			this.db = this.client.db(this.opts.dbName, this.opts.dbOptions);
 		} else {
 			// Using database from connection URI
 			this.db = this.client.db();
 		}
 		await this.db.command({ ping: 1 });
-		this.logger.debug("Database selected successfully.");
+		this.logger.debug('Database selected successfully.');
 
-		this.logger.debug("Open collection:", this.opts.collection);
+		this.logger.debug('Open collection:', this.opts.collection);
 		this.collection = this.db.collection(this.opts.collection);
 	}
 
@@ -131,24 +132,11 @@ class MongoDBAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * Convert the param to ObjectId.
-	 * @param {String|ObjectId} id
-	 * @returns {ObjectId}
+	 * Create a Snowflake ID.
+	 * @returns {string} id
 	 */
-	stringToObjectID(id) {
-		if (typeof id == "string" && ObjectId.isValid(id)) return ObjectId.createFromHexString(id);
-
-		return id;
-	}
-
-	/**
-	 * Convert ObjectID to hex string ID
-	 * @param {ObjectId} id
-	 * @returns {String}
-	 */
-	objectIDToString(id) {
-		if (id && id.toHexString) return id.toHexString();
-		return id;
+	createId() {
+		return SnowflakeId.generate().toString();
 	}
 
 	/**
@@ -173,9 +161,6 @@ class MongoDBAdapter extends BaseAdapter {
 			return res.length > 0 ? res[0] : null;
 		} else {
 			const q = { ...params.query };
-			if (q._id) {
-				q._id = this.stringToObjectID(q._id);
-			}
 			return this.collection.findOne(q);
 		}
 	}
@@ -188,7 +173,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	findById(id) {
-		return this.collection.findOne({ _id: this.stringToObjectID(id) });
+		return this.collection.findOne({ id });
 	}
 
 	/**
@@ -201,9 +186,9 @@ class MongoDBAdapter extends BaseAdapter {
 	findByIds(idList) {
 		return this.collection
 			.find({
-				_id: {
-					$in: idList.map(id => this.stringToObjectID(id))
-				}
+				id: {
+					$in: idList,
+				},
 			})
 			.toArray();
 	}
@@ -237,12 +222,17 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async insert(entity) {
-		if (entity._id) {
-			entity._id = this.stringToObjectID(entity._id);
+		entity = {
+			id: this.createId(),
+			...entity,
+		};
+		try {
+			const res = await this.collection.insertOne(entity);
+			if (!res.acknowledged) throw new Error('MongoDB insertOne failed.');
+			return entity;
+		} catch (error) {
+			throw new Error('Creating Record Failed');
 		}
-		const res = await this.collection.insertOne(entity);
-		if (!res.acknowledged) throw new Error("MongoDB insertOne failed.");
-		return entity;
 	}
 
 	/**
@@ -255,14 +245,17 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async insertMany(entities, opts = {}) {
-		for (const entity of entities) {
-			if (entity._id) {
-				entity._id = this.stringToObjectID(entity._id);
-			}
+		const remappedEntities = entities.map((entity) => {
+			const id = this.createId();
+			return { id, ...entity };
+		});
+		try {
+			const res = await this.collection.insertMany(remappedEntities);
+			if (!res.acknowledged) throw new Error('MongoDB insertMany failed.');
+			return opts.returnEntities ? entities : Object.values(res.insertedIds);
+		} catch (error) {
+			throw new Error('Creating Many Records Failed');
 		}
-		const res = await this.collection.insertMany(entities);
-		if (!res.acknowledged) throw new Error("MongoDB insertMany failed.");
-		return opts.returnEntities ? entities : Object.values(res.insertedIds);
 	}
 
 	/**
@@ -281,11 +274,7 @@ class MongoDBAdapter extends BaseAdapter {
 			changes = flatten(changes, { safe: true });
 		}
 
-		const res = await this.collection.findOneAndUpdate(
-			{ _id: this.stringToObjectID(id) },
-			raw ? changes : { $set: changes },
-			{ returnDocument: "after" }
-		);
+		const res = await this.collection.findOneAndUpdate({ id }, raw ? changes : { $set: changes }, { returnDocument: 'after' });
 		return res.value;
 	}
 
@@ -318,11 +307,9 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async replaceById(id, entity) {
-		const res = await this.collection.findOneAndReplace(
-			{ _id: this.stringToObjectID(id) },
-			entity,
-			{ returnDocument: "after" }
-		);
+		const res = await this.collection.findOneAndReplace({ id }, entity, {
+			returnDocument: 'after',
+		});
 		return res.value;
 	}
 
@@ -334,7 +321,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async removeById(id) {
-		await this.collection.findOneAndDelete({ _id: this.stringToObjectID(id) });
+		await this.collection.findOneAndDelete({ id });
 		return id;
 	}
 
@@ -369,27 +356,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 */
 	entityToJSON(entity) {
 		let json = Object.assign({}, entity);
-		if (this.opts.stringID !== false && entity._id)
-			json._id = this.objectIDToString(entity._id);
 		return json;
-	}
-
-	/**
-	 * Check the IDs in the `query` and convert to ObjectID.
-	 * @param {Object} q
-	 * @returns {Object}
-	 */
-	convertIDToObjectID(query) {
-		if (query && query._id) {
-			const q = { ...query };
-			if (typeof q._id == "object" && Array.isArray(q._id.$in)) {
-				q._id.$in = q._id.$in.map(this.stringToObjectID);
-			} else {
-				q._id = this.stringToObjectID(q._id);
-			}
-			return q;
-		}
-		return query;
 	}
 
 	/**
@@ -412,49 +379,28 @@ class MongoDBAdapter extends BaseAdapter {
 	createQuery(params, opts = {}) {
 		const fn = opts.counting ? this.collection.countDocuments : this.collection.find;
 		let q;
+
 		if (params) {
-			if (_.isString(params.search) && params.search !== "") {
-				// Full-text search
-				// More info: https://docs.mongodb.com/manual/reference/operator/query/text/
-				q = fn.call(
-					this.collection,
-					Object.assign({}, params.query || {}, {
-						$text: {
-							$search: params.search
-						}
-					})
-				);
+			const { filter, search, searchFields, query } = params;
 
-				if (!opts.counting) {
-					if (q.project) q.project({ _score: { $meta: "textScore" } });
+			let cq = [];
+			cq.push(...this.processSearchParams(search, searchFields));
+			cq.push(...this.processFilterParams(filter));
+			if (query) cq.push(query);
 
-					if (q.sort) {
-						if (params.sort) {
-							const sort = this.transformSort(params.sort);
-							if (sort) q.sort(sort);
-						} else {
-							q.sort({
-								_score: {
-									$meta: "textScore"
-								}
-							});
-						}
-					}
-				}
-			} else {
-				const query = this.convertIDToObjectID(params.query);
+			cq = cq.length > 0 ? { $and: cq } : {};
+			// console.log(util.inspect(cq, false, null, true /* enable colors */));
 
-				q = fn.call(this.collection, query);
+			q = fn.call(this.collection, cq);
 
-				// Sort
-				if (!opts.counting && params.sort && q.sort) {
-					const sort = this.transformSort(params.sort);
-					if (sort) q.sort(sort);
+			// Sort
+			if (!opts.counting && params.sort && q.sort) {
+				const sort = this.transformSort(params.sort);
+				if (sort) q.sort(sort);
 
-					// Collation
-					// https://docs.mongodb.com/manual/reference/method/cursor.collation/
-					if (params.collation) q.collation(params.collation);
-				}
+				// Collation
+				// https://docs.mongodb.com/manual/reference/method/cursor.collation/
+				if (params.collation) q.collation(params.collation);
 			}
 
 			if (!opts.counting) {
@@ -484,16 +430,74 @@ class MongoDBAdapter extends BaseAdapter {
 	 * @memberof MongoDbAdapter
 	 */
 	transformSort(sort) {
-		if (typeof sort == "string") sort = [sort];
+		if (typeof sort == 'string') sort = [sort];
 		if (Array.isArray(sort)) {
 			return sort.reduce((res, s) => {
-				if (s.startsWith("-")) res[s.slice(1)] = -1;
+				if (s.startsWith('-')) res[s.slice(1)] = -1;
 				else res[s] = 1;
 				return res;
 			}, {});
 		}
 
 		return sort;
+	}
+
+	processSearchParams(search, searchFields) {
+		if (!search || search.length === 0) {
+			return [];
+		}
+
+		const isFieldSearchable = (field) => field.search && (!searchFields || searchFields.includes(field.name) || searchFields.length === 0);
+
+		const searchInFields = this.service.$fields.filter(isFieldSearchable).flatMap(({ name, type, properties }) =>
+			type === 'object' && properties
+				? Object.entries(properties)
+						.filter(([, prop]) => prop.search)
+						.map(([propName, prop]) => ({ ...prop, name: `${name}.${propName}` }))
+				: { name, type },
+		);
+
+		const searchQueries = searchInFields.map(({ name, type }) => this.buildStandardMatch(name, search, type));
+
+		return searchQueries.length ? [{ $or: searchQueries }] : [];
+	}
+
+	processFilterParams(filter) {
+		const finalQuery = filter
+			? Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
+					if (this.service.$fields.some(({ name, filter }) => filter && name === field)) {
+						const { isMatch, values } = valueObj;
+						const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
+						const valuesToProcess = isMatch ? values : valueObj;
+						const processedValues = Array.isArray(valuesToProcess)
+							? valuesToProcess.map((value) => buildMethod(field, value, typeof value))
+							: [buildMethod(field, valuesToProcess, typeof valuesToProcess)];
+
+						queryAccumulator.push(processedValues.length > 1 ? { $or: processedValues } : processedValues[0]);
+					}
+					return queryAccumulator;
+			  }, [])
+			: [];
+		return finalQuery;
+	}
+
+	buildStandardMatch(field, values, type = null) {
+		const regexPattern = Array.isArray(values) ? values.map((value) => `(${value})`).join('|') : values;
+		return type === 'number'
+			? {
+					$expr: {
+						$regexMatch: {
+							input: { $toString: `$${field}` },
+							regex: `.*${regexPattern}.*`,
+							options: 'i',
+						},
+					},
+			  }
+			: { [field]: { $regex: `.*${regexPattern}.*`, $options: 'i' } };
+	}
+
+	buildStandardStrict(field, value, type = null) {
+		return type === 'number' ? { $expr: { input: { $toString: `$${field}` } } } : { [field]: value };
 	}
 
 	/**
@@ -508,7 +512,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 */
 	createIndex(def) {
 		let fields;
-		if (typeof def.fields == "string") fields = { [def.fields]: 1 };
+		if (typeof def.fields == 'string') fields = { [def.fields]: 1 };
 		else if (Array.isArray(def.fields)) {
 			fields = def.fields.reduce((a, b) => {
 				a[b] = 1;

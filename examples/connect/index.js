@@ -71,6 +71,7 @@ broker.createService({
 // Start server
 broker
 	.start()
+	.then(async () => {})
 	.then(() => broker.repl())
 	.catch(err => {
 		broker.logger.error(err);

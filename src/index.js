@@ -5,22 +5,17 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
 
-const _ = require("lodash");
+const _ = require('lodash');
 
-const Actions = require("./actions");
-const DbMethods = require("./methods");
-const Validation = require("./validation");
-const Transform = require("./transform");
-const Monitoring = require("./monitoring");
-const {
-	generateValidatorSchemaFromFields,
-	getPrimaryKeyFromFields,
-	fixIDInRestPath,
-	fixIDInCacheKeys
-} = require("./schema");
-const pkg = require("../package.json");
+const Actions = require('./actions');
+const DbMethods = require('./methods');
+const Validation = require('./validation');
+const Transform = require('./transform');
+const Monitoring = require('./monitoring');
+const { generateValidatorSchemaFromFields, getPrimaryKeyFromFields, fixIDInRestPath, fixIDInCacheKeys } = require('./schema');
+const pkg = require('../package.json');
 
 module.exports = function DatabaseMixin(mixinOpts) {
 	mixinOpts = _.defaultsDeep(mixinOpts, {
@@ -28,7 +23,7 @@ module.exports = function DatabaseMixin(mixinOpts) {
 		createActions: true,
 
 		/** @type {String} Default visibility of generated actions */
-		actionVisibility: "published",
+		actionVisibility: 'published',
 
 		/** @type {Boolean} Generate `params` schema for generated actions based on the `fields` */
 		generateActionParams: true,
@@ -37,7 +32,7 @@ module.exports = function DatabaseMixin(mixinOpts) {
 		enableParamsConversion: true,
 
 		/** @type {Boolean|String} Strict mode in validation schema for objects. Values: true|false|"remove" */
-		strict: "remove",
+		strict: 'remove',
 
 		/** @type {Object} Caching settings */
 		cache: {
@@ -46,19 +41,19 @@ module.exports = function DatabaseMixin(mixinOpts) {
 			/** @type {String} Name of event for clearing cache */
 			eventName: null,
 			/** @type {String} Type of event for clearing cache */
-			eventType: "broadcast",
+			eventType: 'broadcast',
 			/** @type {Boolean|Array<String>} Subscribe to cache clean event of service dependencies and clear the local cache entries */
 			cacheCleanOnDeps: true,
 			/** @type {Array<String>?} Additional cache keys */
 			additionalKeys: null,
 			/** @type {Function?} Custom cache cleaner function */
-			cacheCleaner: null
+			cacheCleaner: null,
 		},
 		/** @type {Boolean} Set auto-aliasing fields */
 		rest: true,
 
 		// Entity changed lifecycle event mode. Values: null, "broadcast", "emit". The `null` disables event sending.
-		entityChangedEventType: "broadcast",
+		entityChangedEventType: 'broadcast',
 
 		// Add previous entity data to the entity changed event payload in case of update or replace.
 		entityChangedOldEntity: false,
@@ -73,26 +68,26 @@ module.exports = function DatabaseMixin(mixinOpts) {
 		maxLimit: -1,
 
 		/** @type {Number} Default page size in `list` action. */
-		defaultPageSize: 10
+		defaultPageSize: 10,
 	});
 
 	const schema = {
 		// Must overwrite it
-		name: "",
+		name: '',
 
 		/**
 		 * Metadata
 		 */
 		// Service's metadata
 		metadata: {
-			$category: "database",
-			$description: "Official Data Access service",
+			$category: 'database',
+			$description: 'Official Data Access service',
 			$official: true,
 			$package: {
 				name: pkg.name,
 				version: pkg.version,
-				repo: pkg.repository ? pkg.repository.url : null
-			}
+				repo: pkg.repository ? pkg.repository.url : null,
+			},
 		},
 
 		/**
@@ -112,14 +107,14 @@ module.exports = function DatabaseMixin(mixinOpts) {
 			defaultPopulates: null,
 
 			/** @type {Object?} Index definitions */
-			indexes: null
+			indexes: null,
 		},
 
 		/**
 		 * Actions
 		 */
 		actions: {
-			...Actions(mixinOpts)
+			...Actions(mixinOpts),
 		},
 
 		/**
@@ -129,7 +124,7 @@ module.exports = function DatabaseMixin(mixinOpts) {
 			...DbMethods(mixinOpts),
 			...Transform(mixinOpts),
 			...Validation(mixinOpts),
-			...Monitoring(mixinOpts)
+			...Monitoring(mixinOpts),
 		},
 
 		/**
@@ -145,16 +140,13 @@ module.exports = function DatabaseMixin(mixinOpts) {
 					if (!Array.isArray(hooks)) hooks = [hooks];
 
 					hooks = _.compact(
-						hooks.map(h => {
+						hooks.map((h) => {
 							return _.isString(h) ? (_.isFunction(this[h]) ? this[h] : null) : h;
-						})
+						}),
 					);
 
 					this.$hooks[name] = (...args) => {
-						return hooks.reduce(
-							(p, fn) => p.then(() => fn.apply(this, args)),
-							this.Promise.resolve()
-						);
+						return hooks.reduce((p, fn) => p.then(() => fn.apply(this, args)), this.Promise.resolve());
 					};
 				});
 			}
@@ -190,56 +182,73 @@ module.exports = function DatabaseMixin(mixinOpts) {
 				if (mixinOpts.generateActionParams) {
 					// Generate action params
 					if (Object.keys(fields).length > 0) {
-						if (schema.actions.create) {
-							schema.actions.create.params = generateValidatorSchemaFromFields(
-								fields,
-								{
-									type: "create",
-									strict: mixinOpts.strict,
-									enableParamsConversion: mixinOpts.enableParamsConversion
-								}
-							);
+						if (schema.actions.create && !schema.actions.create.params) {
+							schema.actions.create.params = generateValidatorSchemaFromFields(fields, {
+								type: 'create',
+								strict: mixinOpts.strict,
+								enableParamsConversion: mixinOpts.enableParamsConversion,
+							});
 						}
 
-						if (schema.actions.createMany) {
+						if (schema.actions.createMany && !schema.actions.createMany.params) {
 							schema.actions.createMany.params = {
 								// TODO!
 								$$root: true,
-								type: "array",
+								type: 'array',
 								empty: false,
 								items: {
-									type: "object",
+									type: 'object',
 									strict: mixinOpts.strict,
 									properties: generateValidatorSchemaFromFields(fields, {
-										type: "create",
+										type: 'create',
 										level: 1,
 										strict: mixinOpts.strict,
-										enableParamsConversion: mixinOpts.enableParamsConversion
-									})
-								}
+										enableParamsConversion: mixinOpts.enableParamsConversion,
+									}),
+								},
 							};
 						}
 
-						if (schema.actions.update) {
-							schema.actions.update.params = generateValidatorSchemaFromFields(
-								fields,
-								{
-									type: "update",
+						if (schema.actions.updateMany && !schema.actions.updateMany.params) {
+							schema.actions.updateMany.params = {
+								// TODO!
+								$$root: true,
+								type: 'object',
+								changes: {
+									type: 'object',
 									strict: mixinOpts.strict,
-									enableParamsConversion: mixinOpts.enableParamsConversion
-								}
-							);
+									properties: generateValidatorSchemaFromFields(fields, {
+										type: 'update',
+										strict: mixinOpts.strict,
+										enableParamsConversion: mixinOpts.enableParamsConversion,
+									}),
+								},
+								query: [
+									{ type: 'object', optional: true },
+									{ type: 'string', optional: true },
+								],
+								scope: [
+									{ type: 'boolean', optional: true },
+									{ type: 'string', optional: true },
+									{ type: 'array', optional: true, items: 'string' },
+								],
+							};
 						}
 
-						if (schema.actions.replace) {
-							schema.actions.replace.params = generateValidatorSchemaFromFields(
-								fields,
-								{
-									type: "replace",
-									strict: mixinOpts.strict,
-									enableParamsConversion: mixinOpts.enableParamsConversion
-								}
-							);
+						if (schema.actions.update && !schema.actions.update.params) {
+							schema.actions.update.params = generateValidatorSchemaFromFields(fields, {
+								type: 'update',
+								strict: mixinOpts.strict,
+								enableParamsConversion: mixinOpts.enableParamsConversion,
+							});
+						}
+
+						if (schema.actions.replace && !schema.actions.replace.params) {
+							schema.actions.replace.params = generateValidatorSchemaFromFields(fields, {
+								type: 'replace',
+								strict: mixinOpts.strict,
+								enableParamsConversion: mixinOpts.enableParamsConversion,
+							});
 						}
 					}
 				}
@@ -249,19 +258,19 @@ module.exports = function DatabaseMixin(mixinOpts) {
 					if (schema.actions.get && schema.actions.get.params) {
 						schema.actions.get.params[primaryKeyField.name] = {
 							type: primaryKeyField.type,
-							convert: true
+							convert: true,
 						};
 					}
 					if (schema.actions.resolve && schema.actions.resolve.params) {
 						schema.actions.resolve.params[primaryKeyField.name] = [
-							{ type: "array", items: { type: primaryKeyField.type, convert: true } },
-							{ type: primaryKeyField.type, convert: true }
+							{ type: 'array', items: { type: primaryKeyField.type, convert: true } },
+							{ type: primaryKeyField.type, convert: true },
 						];
 					}
 					if (schema.actions.remove && schema.actions.remove.params) {
 						schema.actions.remove.params[primaryKeyField.name] = {
 							type: primaryKeyField.type,
-							convert: true
+							convert: true,
 						};
 					}
 
@@ -303,16 +312,12 @@ module.exports = function DatabaseMixin(mixinOpts) {
 						// Traverse dependencies and collect the service names
 						const svcDeps = schema.dependencies;
 						if (Array.isArray(svcDeps)) {
-							additionalEventNames.push(
-								...svcDeps
-									.map(s => (_.isPlainObject(s) && s.name ? s.name : s))
-									.map(s => `cache.clean.${s}`)
-							);
+							additionalEventNames.push(...svcDeps.map((s) => (_.isPlainObject(s) && s.name ? s.name : s)).map((s) => `cache.clean.${s}`));
 						}
 					}
 
 					if (additionalEventNames.length > 0) {
-						additionalEventNames.forEach(eventName => {
+						additionalEventNames.forEach((eventName) => {
 							schema.events[eventName] =
 								mixinOpts.cache.cacheCleaner ||
 								async function () {
@@ -324,7 +329,7 @@ module.exports = function DatabaseMixin(mixinOpts) {
 					}
 				}
 			}
-		}
+		},
 	};
 
 	return schema;

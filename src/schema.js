@@ -24,7 +24,7 @@ function getPrimaryKeyFromFields(fields) {
 		}
 	});
 
-	return field || { name: "_id", type: "string", columnName: "_id" };
+	return field || { name: "id", type: "string", columnName: "id" };
 }
 
 function fixIDInRestPath(def, primaryKeyField) {
