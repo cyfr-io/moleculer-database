@@ -11,7 +11,7 @@ const PARAMS_FIELDS = [
 	{ type: 'array', optional: true, items: 'string' },
 ];
 
-const PARAMS_FILTER = [[{ optional: true, type: 'object' }]];
+const PARAMS_FILTER = [{ optional: true, type: 'object' }];
 
 const PARAMS_SEARCH = [
 	{ type: 'string', optional: true },
