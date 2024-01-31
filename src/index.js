@@ -158,6 +158,7 @@ module.exports = function DatabaseMixin(mixinOpts) {
 		async started() {
 			this._registerMoleculerMetrics();
 			this._processFields();
+			this._processIndexes();
 		},
 
 		/**

@@ -910,8 +910,9 @@ module.exports = function (mixinOpts) {
 			adapter = await (adapter || this.getAdapter());
 			if (!indexes) indexes = this.settings.indexes;
 			if (Array.isArray(indexes)) {
-				await Promise.all(indexes.map((def) => this.createIndex(adapter, def)));
+				return await Promise.all(indexes.map((def) => this.createIndex(adapter, def)));
 			}
+			return;
 		},
 
 		/**
@@ -926,8 +927,6 @@ module.exports = function (mixinOpts) {
 			if (_.isString(def.fields)) newDef.fields = this._getColumnNameFromFieldName(def.fields);
 			else if (Array.isArray(def.fields)) newDef.fields = def.fields.map((f) => this._getColumnNameFromFieldName(f));
 			else if (_.isPlainObject(def.fields)) newDef.fields = this._queryFieldNameConversion(def.fields, false);
-			console.log('Fat Jew');
-			console.log(def);
 			return adapter.createIndex(newDef);
 		},
 

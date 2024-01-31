@@ -62,6 +62,25 @@ module.exports = function (mixinOpts) {
 			this.logger.debug(`Primary key field`, this.$primaryField);
 		},
 
+		/**
+		 * Processing the `indexes` definition.
+		 *
+		 * @private
+		 */
+		_processIndexes() {
+			if (this.settings.indexes) {
+				if (_.isObject(this.settings.indexes) && !_.isArray(this.settings.indexes)) {
+					this.settings.indexes = [this.settings.indexes];
+				} else if (!_.isArray(this.settings.indexes)) {
+					// If indexes is neither an object nor an array, throw an error
+					throw new ServiceSchemaError(
+						`Invalid 'indexes' definition in '${this.fullName}' service. It should be an 'Object' or an 'Array'.`,
+						{ indexes: this.settings.indexes },
+					);
+				}
+			}
+		},
+
 		_processFieldObject(fields) {
 			return _.compact(
 				_.map(fields, (def, name) => {

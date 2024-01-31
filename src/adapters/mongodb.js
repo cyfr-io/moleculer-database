@@ -121,14 +121,24 @@ class MongoDBAdapter extends BaseAdapter {
 		this.logger.debug('Open collection:', this.opts.collection);
 		this.collection = this.db.collection(this.opts.collection);
 
-		const idIndex = (await this.collection.indexes()).find((item) => item.name === 'id_primary');
-		if (!idIndex) {
-			try {
-				await this.service.createIndex(this, { fields: 'id', unique: true, name: 'id_primary' });
-			} catch (err) {
-				this.logger.warn('Unable to create default id index for collection ' + this.opts.collection);
-			}
+		this.connected();
+	}
+
+	/**
+	 * On successful database connection
+	 */
+	async connected() {
+		const serviceIndexes = [...this.service.settings.indexes];
+
+		if (this.service.$primaryField?.generated !== 'user') {
+			const columnName = this.service.$primaryField.columnName;
+			serviceIndexes.push({ fields: columnName, unique: true, name: `${columnName}_primary` });
 		}
+
+		const existingIndexes = await this.collection.indexes();
+		const toCreateIndexes = serviceIndexes.filter((item) => !existingIndexes.some((exist) => exist.name === item.name));
+
+		await this.service.createIndexes(null, toCreateIndexes);
 	}
 
 	/**
@@ -138,14 +148,6 @@ class MongoDBAdapter extends BaseAdapter {
 		if (this.client) {
 			if (this.removeAdapterFromClientGlobalStore(this.storeKey)) await this.client.close();
 		}
-	}
-
-	/**
-	 * Create a Snowflake ID.
-	 * @returns {string} id
-	 */
-	createId() {
-		return SnowflakeId.generate().toString();
 	}
 
 	/**
@@ -231,12 +233,9 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async insert(entity) {
-		entity = {
-			id: this.createId(),
-			...entity,
-		};
 		try {
-			const res = await this.collection.insertOne(entity);
+			const e = this.addIdToEntity(entity);
+			const res = await this.collection.insertOne(e);
 			if (!res.acknowledged) throw new Error('MongoDB insertOne failed.');
 			return entity;
 		} catch (error) {
@@ -254,10 +253,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async insertMany(entities, opts = {}) {
-		const remappedEntities = entities.map((entity) => {
-			const id = this.createId();
-			return { id, ...entity };
-		});
+		const remappedEntities = entities.map((entity) => this.addIdToEntity(entity));
 		try {
 			const res = await this.collection.insertMany(remappedEntities);
 			if (!res.acknowledged) throw new Error('MongoDB insertMany failed.');
@@ -423,6 +419,21 @@ class MongoDBAdapter extends BaseAdapter {
 	}
 
 	/**
+	 * Checks if need to add anything to entity
+	 * @returns {string} id
+	 */
+	addIdToEntity(entity) {
+		if (this.service.$primaryField?.generated !== 'user') {
+			const columnName = this.service.$primaryField.columnName;
+			entity = {
+				[columnName]: SnowflakeId.generate().toString(),
+				...entity,
+			};
+		}
+		return entity;
+	}
+
+	/**
 	 * Convert the `sort` param to a `sort` object to Mongo queries.
 	 *
 	 * @param {String|Array<String>|Object} paramSort
@@ -524,8 +535,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 * @param {Boolean?} def.sparse
 	 * @param {Number?} def.expireAfterSeconds
 	 */
-	createIndex(def) {
-		console.log('Nigga');
+	async createIndex(def) {
 		let fields;
 		if (typeof def.fields == 'string') fields = { [def.fields]: 1 };
 		else if (Array.isArray(def.fields)) {
@@ -536,9 +546,13 @@ class MongoDBAdapter extends BaseAdapter {
 		} else {
 			fields = def.fields;
 		}
-		console.log('nigg');
-		console.log(def);
-		return this.collection.createIndex(fields, def);
+		try {
+			return await this.collection.createIndex(fields, def);
+		} catch (err) {
+			console.log(def);
+			this.logger.warn(`Unable to create default Mongo index for collection ${this.opts.collection} with fields "${def.fields}"`);
+			return false;
+		}
 	}
 
 	/**
@@ -549,9 +563,9 @@ class MongoDBAdapter extends BaseAdapter {
 	 * @param {String?} def.name
 	 * @returns {Promise<void>}
 	 */
-	removeIndex(def) {
-		if (def.name) return this.collection.dropIndex(def.name);
-		else return this.collection.dropIndex(def.fields);
+	async removeIndex(def) {
+		if (def.name) return await this.collection.dropIndex(def.name);
+		else return await this.collection.dropIndex(def.fields);
 	}
 }
 
