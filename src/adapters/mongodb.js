@@ -120,6 +120,15 @@ class MongoDBAdapter extends BaseAdapter {
 
 		this.logger.debug('Open collection:', this.opts.collection);
 		this.collection = this.db.collection(this.opts.collection);
+
+		const idIndex = (await this.collection.indexes()).find((item) => item.name === 'id_primary');
+		if (!idIndex) {
+			try {
+				await this.service.createIndex(this, { fields: 'id', unique: true, name: 'id_primary' });
+			} catch (err) {
+				this.logger.warn('Unable to create default id index for collection ' + this.opts.collection);
+			}
+		}
 	}
 
 	/**
@@ -516,6 +525,7 @@ class MongoDBAdapter extends BaseAdapter {
 	 * @param {Number?} def.expireAfterSeconds
 	 */
 	createIndex(def) {
+		console.log('Nigga');
 		let fields;
 		if (typeof def.fields == 'string') fields = { [def.fields]: 1 };
 		else if (Array.isArray(def.fields)) {
@@ -526,6 +536,8 @@ class MongoDBAdapter extends BaseAdapter {
 		} else {
 			fields = def.fields;
 		}
+		console.log('nigg');
+		console.log(def);
 		return this.collection.createIndex(fields, def);
 	}
 

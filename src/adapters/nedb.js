@@ -4,11 +4,11 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
 
-const _ = require("lodash");
-const { flatten } = require("../utils");
-const BaseAdapter = require("./base");
+const _ = require('lodash');
+const { flatten } = require('../utils');
+const BaseAdapter = require('./base');
 
 let Datastore;
 
@@ -43,17 +43,13 @@ class NeDBAdapter extends BaseAdapter {
 		super.init(service);
 
 		try {
-			Datastore = require("nedb");
+			Datastore = require('nedb');
 		} catch (err) {
 			/* istanbul ignore next */
-			this.broker.fatal(
-				"The 'nedb' package is missing! Please install it with 'npm install nedb --save' command.",
-				err,
-				true
-			);
+			this.broker.fatal("The 'nedb' package is missing! Please install it with 'npm install nedb --save' command.", err, true);
 		}
 
-		this.checkClientLibVersion("nedb", "^1.8.0");
+		this.checkClientLibVersion('nedb', '^1.8.0');
 	}
 
 	/**
@@ -64,7 +60,7 @@ class NeDBAdapter extends BaseAdapter {
 		else this.db = new Datastore(this.opts.neDB);
 
 		return new this.Promise((resolve, reject) => {
-			this.db.loadDatabase(err => {
+			this.db.loadDatabase((err) => {
 				if (err) return reject(err);
 				resolve();
 			});
@@ -194,7 +190,7 @@ class NeDBAdapter extends BaseAdapter {
 				if (err) return reject(err);
 
 				if (opts.returnEntities) resolve(docs);
-				else resolve(docs.map(doc => doc._id));
+				else resolve(docs.map((doc) => doc._id));
 			});
 		});
 	}
@@ -216,15 +212,10 @@ class NeDBAdapter extends BaseAdapter {
 		}
 
 		return new this.Promise((resolve, reject) => {
-			this.db.update(
-				{ _id: id },
-				raw ? changes : { $set: changes },
-				{ returnUpdatedDocs: true },
-				(err, numAffected, affectedDocuments) => {
-					if (err) return reject(err);
-					resolve(affectedDocuments);
-				}
-			);
+			this.db.update({ _id: id }, raw ? changes : { $set: changes }, { returnUpdatedDocs: true }, (err, numAffected, affectedDocuments) => {
+				if (err) return reject(err);
+				resolve(affectedDocuments);
+			});
 		});
 	}
 
@@ -245,15 +236,10 @@ class NeDBAdapter extends BaseAdapter {
 		}
 
 		return new this.Promise((resolve, reject) => {
-			this.db.update(
-				query,
-				raw ? changes : { $set: changes },
-				{ multi: true },
-				(err, numAffected /*, affectedDocuments*/) => {
-					if (err) return reject(err);
-					resolve(numAffected);
-				}
-			);
+			this.db.update(query, raw ? changes : { $set: changes }, { multi: true }, (err, numAffected /*, affectedDocuments*/) => {
+				if (err) return reject(err);
+				resolve(numAffected);
+			});
 		});
 	}
 
@@ -267,15 +253,10 @@ class NeDBAdapter extends BaseAdapter {
 	 */
 	replaceById(id, entity) {
 		return new this.Promise((resolve, reject) => {
-			this.db.update(
-				{ _id: id },
-				entity,
-				{ returnUpdatedDocs: true },
-				(err, numAffected, affectedDocuments) => {
-					if (err) return reject(err);
-					resolve(affectedDocuments);
-				}
-			);
+			this.db.update({ _id: id }, entity, { returnUpdatedDocs: true }, (err, numAffected, affectedDocuments) => {
+				if (err) return reject(err);
+				resolve(affectedDocuments);
+			});
 		});
 	}
 
@@ -288,7 +269,7 @@ class NeDBAdapter extends BaseAdapter {
 	 */
 	removeById(id) {
 		return new this.Promise((resolve, reject) => {
-			this.db.remove({ _id: id }, err => {
+			this.db.remove({ _id: id }, (err) => {
 				if (err) return reject(err);
 				resolve(id);
 			});
@@ -348,13 +329,13 @@ class NeDBAdapter extends BaseAdapter {
 			// Text search
 			let query = params.query || {};
 
-			if (_.isString(params.search) && params.search !== "") {
+			if (_.isString(params.search) && params.search !== '') {
 				query.$where = function () {
 					let doc = this;
 					const s = params.search.toLowerCase();
 					if (params.searchFields) doc = _.pick(this, params.searchFields);
 
-					const res = _.values(doc).find(v => String(v).toLowerCase().indexOf(s) !== -1);
+					const res = _.values(doc).find((v) => String(v).toLowerCase().indexOf(s) !== -1);
 					return res != null;
 				};
 			}
@@ -363,11 +344,11 @@ class NeDBAdapter extends BaseAdapter {
 			// Sort
 			if (params.sort) {
 				let pSort = params.sort;
-				if (typeof pSort == "string") pSort = [pSort];
+				if (typeof pSort == 'string') pSort = [pSort];
 
 				const sortFields = {};
-				pSort.forEach(field => {
-					if (field.startsWith("-")) sortFields[field.slice(1)] = -1;
+				pSort.forEach((field) => {
+					if (field.startsWith('-')) sortFields[field.slice(1)] = -1;
 					else sortFields[field] = 1;
 				});
 				q.sort(sortFields);
@@ -406,12 +387,12 @@ class NeDBAdapter extends BaseAdapter {
 			this.db.ensureIndex(
 				{
 					fieldName: fieldName,
-					..._.omit(def, ["fieldName", "fields"])
+					..._.omit(def, ['fieldName', 'fields']),
 				},
-				err => {
+				(err) => {
 					if (err) return reject(err);
 					resolve();
-				}
+				},
 			);
 		});
 	}
@@ -426,7 +407,7 @@ class NeDBAdapter extends BaseAdapter {
 	 */
 	removeIndex(def) {
 		return new this.Promise((resolve, reject) => {
-			this.db.removeIndex({ fieldName: def.fieldName || def.fields }, err => {
+			this.db.removeIndex({ fieldName: def.fieldName || def.fields }, (err) => {
 				if (err) return reject(err);
 				resolve();
 			});

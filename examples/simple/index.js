@@ -106,6 +106,9 @@ broker.createService({
 				columnType: 'double',
 			},
 		},
+		indexes: {
+			fields: 'title',
+		},
 	},
 
 	actions: {
@@ -161,19 +164,19 @@ broker
 		});
 		console.log('3rd post:', post);
 
-		let cr = [];
-		for (let i = 0; i < 25; i++) {
-			cr.push({
-				title: `${i} Numbered Post`,
-				content: `Test content hello`,
-				status: true,
-				votes: i,
-			});
-		}
+		// let cr = [];
+		// for (let i = 0; i < 25; i++) {
+		// 	cr.push({
+		// 		title: `${i} Numbered Post`,
+		// 		content: `Test content hello`,
+		// 		status: true,
+		// 		votes: i,
+		// 	});
+		// }
 
-		let posts;
-		posts = await broker.call('posts.createMany', cr);
-		console.log('4. & 5. posts:', posts);
+		// let posts;
+		// posts = await broker.call('posts.createMany', cr);
+		// console.log('4. & 5. posts:', posts);
 
 		// await broker.call('posts.updateMany', { query: { votes: 0 }, changes: { content: 'Nigga ' } });
 		// Get all posts
