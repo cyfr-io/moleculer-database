@@ -68,7 +68,7 @@ broker.createService({
 				create: true,
 				createMany: true,
 				count: false,
-				find: false,
+				find: true,
 				list: true,
 				replace: false,
 				remove: false,
@@ -109,11 +109,6 @@ broker.createService({
 	},
 
 	actions: {
-		list: {
-			async handler(ctx) {
-				return false;
-			},
-		},
 		remove: {
 			rest: {
 				method: 'DELETE',
@@ -172,7 +167,7 @@ broker
 				title: `${i} Numbered Post`,
 				content: `Test content hello`,
 				status: true,
-				votes: i === 1 ? true : false,
+				votes: i,
 			});
 		}
 
@@ -180,10 +175,10 @@ broker
 		posts = await broker.call('posts.createMany', cr);
 		console.log('4. & 5. posts:', posts);
 
-		await broker.call('posts.updateMany', { query: { votes: 0 }, changes: { content: 'Nigga ' } });
+		// await broker.call('posts.updateMany', { query: { votes: 0 }, changes: { content: 'Nigga ' } });
 		// Get all posts
-		// // posts = await broker.call('posts.find', { limit: 2, sort: '-createdAt' });
-		// posts = await broker.call('posts.find', { filter: { title: '44' } });
+		// posts = await broker.call('posts.find', { limit: 2, sort: '-createdAt' });
+		// posts = await broker.call('posts.find', { sort: 'votes', single: true });
 		// console.log('Find:', posts);
 
 		// List posts with pagination
@@ -199,7 +194,6 @@ broker
 		// console.log('List:', posts);
 
 		// Get a post by ID
-
 		// post = await broker.call('posts.get', { id: post.id });
 		// console.log('Get:', post);
 

@@ -160,8 +160,8 @@ class MongoDBAdapter extends BaseAdapter {
 			const res = await this.find(params);
 			return res.length > 0 ? res[0] : null;
 		} else {
-			const q = { ...params.query };
-			return this.collection.findOne(q);
+			const query = this.parseParams(params);
+			return this.collection.findOne(query);
 		}
 	}
 
@@ -381,17 +381,8 @@ class MongoDBAdapter extends BaseAdapter {
 		let q;
 
 		if (params) {
-			const { filter, search, searchFields, query } = params;
-
-			let cq = [];
-			cq.push(...this.processSearchParams(search, searchFields));
-			cq.push(...this.processFilterParams(filter));
-			if (query) cq.push(query);
-
-			cq = cq.length > 0 ? { $and: cq } : {};
-			// console.log(util.inspect(cq, false, null, true /* enable colors */));
-
-			q = fn.call(this.collection, cq);
+			const query = this.parseParams(params);
+			q = fn.call(this.collection, query);
 
 			// Sort
 			if (!opts.counting && params.sort && q.sort) {
@@ -460,6 +451,20 @@ class MongoDBAdapter extends BaseAdapter {
 		const searchQueries = searchInFields.map(({ name, type }) => this.buildStandardMatch(name, search, type));
 
 		return searchQueries.length ? [{ $or: searchQueries }] : [];
+	}
+
+	parseParams(params) {
+		const { filter, search, searchFields, query } = params;
+
+		let cq = [];
+		cq.push(...this.processSearchParams(search, searchFields));
+		cq.push(...this.processFilterParams(filter));
+		if (query) cq.push(query);
+
+		cq = cq.length > 0 ? { $and: cq } : {};
+		// console.log(util.inspect(cq, false, null, true /* enable colors */));
+
+		return cq;
 	}
 
 	processFilterParams(filter) {
