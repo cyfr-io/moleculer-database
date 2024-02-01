@@ -247,7 +247,7 @@ class MongoDBAdapter extends BaseAdapter {
 			const e = this.addIdToEntity(entity);
 			const res = await this.collection.insertOne(e);
 			if (!res.acknowledged) throw new Error('MongoDB insertOne failed.');
-			return entity;
+			return e;
 		} catch (error) {
 			throw new Error('Creating Record Failed');
 		}
