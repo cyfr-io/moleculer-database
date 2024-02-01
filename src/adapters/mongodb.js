@@ -139,10 +139,13 @@ class MongoDBAdapter extends BaseAdapter {
 			serviceIndexes.push({ fields: columnName, unique: true, name: `${columnName}_primary` });
 		}
 
-		const existingIndexes = await this.collection.indexes();
-		const toCreateIndexes = serviceIndexes.filter((item) => !existingIndexes.some((exist) => exist.name === item.name));
-
-		await this.service.createIndexes(null, toCreateIndexes);
+		try {
+			const existingIndexes = await this.collection.indexes();
+			const toCreateIndexes = serviceIndexes.filter((item) => !existingIndexes.some((exist) => exist.name === item.name));
+			await this.service.createIndexes(null, toCreateIndexes);
+		} catch (error) {
+			this.logger.warn('Unable to create indexes');
+		}
 	}
 
 	/**
