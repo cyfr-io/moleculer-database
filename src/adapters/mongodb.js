@@ -322,7 +322,8 @@ class MongoDBAdapter extends BaseAdapter {
 	 *
 	 */
 	async replaceById(id, entity) {
-		const res = await this.collection.findOneAndReplace({ id }, entity, {
+		const e = { id, ...entity };
+		const res = await this.collection.findOneAndReplace({ id }, e, {
 			returnDocument: 'after',
 		});
 		return res.value;
