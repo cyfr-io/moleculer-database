@@ -144,8 +144,10 @@ class MongoDBAdapter extends BaseAdapter {
 			const toCreateIndexes = serviceIndexes.filter((item) => !existingIndexes.some((exist) => exist.name === item.name));
 			await this.service.createIndexes(null, toCreateIndexes);
 		} catch (error) {
-			this.logger.warn('Did not create indexes for collection ' + this.opts.collection);
-			console.dir(error);
+			if (error.codeName === 'NamespaceNotFound') {
+				return this.logger.warn('Did not create indexes for non-existant collection ' + this.opts.collection);
+			}
+			throw error;
 		}
 	}
 

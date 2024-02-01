@@ -48,7 +48,7 @@ const broker = new ServiceBroker({
 
 // Create a service
 broker.createService({
-	name: 'posts',
+	name: 'fatjew',
 	mixins: [
 		DbService({
 			adapter: {
@@ -76,6 +76,7 @@ broker.createService({
 				updateMany: true,
 				remove: false,
 			},
+			name: 'fatkew',
 		}),
 	],
 
@@ -139,49 +140,41 @@ broker
 	.start()
 	.then(async () => {
 		// Create a new post
-		let post = await broker.call('posts.create', {
-			title: 'This Should Be Here 1',
-			content: 'Content of my first post...',
-		});
-
-		console.log('First post:', post);
-
-		// await broker.Promise.delay(500);
-
-		// post = await broker.call('posts.create', {
-		// 	title: 'This Should Be Here 2',
-		// 	content: 'Content of my second post...',
-		// 	votes: 3,
+		// let post = await broker.call('posts.create', {
+		// 	title: 'This Should Be Here 1',
+		// 	content: 'Content of my first post...',
 		// });
-		//console.log("Second post:", post);
-
-		post = await broker.call('posts.create', {
-			title: 'This Should Get Updated 3',
-			content: 'I wanna see diff this',
-			status: false,
-		});
-		console.log('3rd post:', post);
-
-		let cr = [];
-		for (let i = 0; i < 25; i++) {
-			cr.push({
-				title: `${i} Numbered Post`,
-				content: `Test content hello`,
-				status: true,
-				votes: i,
-			});
-		}
-
-		let posts;
-		posts = await broker.call('posts.createMany', cr);
-		console.log('4. & 5. posts:', posts);
-
+		// console.log('First post:', post);
+		// // await broker.Promise.delay(500);
+		// // post = await broker.call('posts.create', {
+		// // 	title: 'This Should Be Here 2',
+		// // 	content: 'Content of my second post...',
+		// // 	votes: 3,
+		// // });
+		// //console.log("Second post:", post);
+		// post = await broker.call('posts.create', {
+		// 	title: 'This Should Get Updated 3',
+		// 	content: 'I wanna see diff this',
+		// 	status: false,
+		// });
+		// console.log('3rd post:', post);
+		// let cr = [];
+		// for (let i = 0; i < 25; i++) {
+		// 	cr.push({
+		// 		title: `${i} Numbered Post`,
+		// 		content: `Test content hello`,
+		// 		status: true,
+		// 		votes: i,
+		// 	});
+		// }
+		// let posts;
+		// posts = await broker.call('posts.createMany', cr);
+		// console.log('4. & 5. posts:', posts);
 		// await broker.call('posts.updateMany', { query: { votes: 0 }, changes: { content: 'Nigga ' } });
 		// Get all posts
 		// posts = await broker.call('posts.find', { limit: 2, sort: '-createdAt' });
 		// posts = await broker.call('posts.find', { sort: 'votes', single: true });
 		// console.log('Find:', posts);
-
 		// List posts with pagination
 		// posts = await broker.call('posts.list', {
 		// 	page: 1,
@@ -193,15 +186,12 @@ broker
 		// 	},
 		// });
 		// console.log('List:', posts);
-
 		// Get a post by ID
 		// post = await broker.call('posts.get', { id: post.id });
 		// console.log('Get:', post);
-
 		// // // Update the post
 		// post = await broker.call('posts.update', { id: post.id, title: 'Modified post' });
 		// console.log('Updated:', post);
-
 		// // Delete a user
 		// const res = await broker.call('posts.remove', { id: post.id });
 		// console.log('Deleted:', res);
