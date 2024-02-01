@@ -128,7 +128,11 @@ class MongoDBAdapter extends BaseAdapter {
 	 * On successful database connection
 	 */
 	async connected() {
-		const serviceIndexes = [...this.service.settings.indexes];
+		const serviceIndexes = [];
+
+		if (this.service.settings.indexes) {
+			serviceIndexes.push(this.service.settings.indexes);
+		}
 
 		if (this.service.$primaryField?.generated !== 'user') {
 			const columnName = this.service.$primaryField.columnName;
