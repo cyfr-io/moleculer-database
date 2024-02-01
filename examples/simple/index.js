@@ -48,7 +48,7 @@ const broker = new ServiceBroker({
 
 // Create a service
 broker.createService({
-	name: 'fatjew',
+	name: 'tezt',
 	mixins: [
 		DbService({
 			adapter: {
@@ -76,7 +76,6 @@ broker.createService({
 				updateMany: true,
 				remove: false,
 			},
-			name: 'fatkew',
 		}),
 	],
 
