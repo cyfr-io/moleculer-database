@@ -102,6 +102,8 @@ module.exports = function (mixinOpts) {
 				'query',
 			]),
 			params: {
+				single: { type: 'boolean', default: false, optional: true },
+				distinct: { type: 'boolean', default: false, optional: true },
 				limit: {
 					type: 'number',
 					integer: true,
@@ -113,7 +115,6 @@ module.exports = function (mixinOpts) {
 				offset: { type: 'number', integer: true, min: 0, optional: true, convert: true },
 				fields: PARAMS_FIELDS,
 				filter: PARAMS_FILTER,
-				single: { type: 'boolean', default: false, optional: true },
 				sort: PARAMS_SORT,
 				search: PARAMS_SEARCH,
 				searchFields: PARAMS_SEARCHFIELDS,
@@ -124,7 +125,7 @@ module.exports = function (mixinOpts) {
 			},
 			async handler(ctx) {
 				const { single } = ctx.params;
-				return !single ? this.findEntities(ctx) : this.findEntity(ctx);
+				return !single ? this.findEntities(ctx) : this.findEntity(ctx, { ...ctx.params, limit: undefined, offset: undefined });
 			},
 		};
 	}
