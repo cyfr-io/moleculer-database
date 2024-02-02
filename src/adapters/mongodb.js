@@ -422,8 +422,6 @@ class MongoDBAdapter extends BaseAdapter {
 			// https://docs.mongodb.com/manual/reference/method/cursor.hint/
 			if (params.hint) q.hint(params.hint);
 
-			if (params.distinct) q.distinct(params.distinct);
-
 			return q;
 		}
 

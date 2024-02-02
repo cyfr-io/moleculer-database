@@ -103,7 +103,6 @@ module.exports = function (mixinOpts) {
 			]),
 			params: {
 				single: { type: 'boolean', default: false, optional: true },
-				distinct: { type: 'boolean', default: false, optional: true },
 				limit: {
 					type: 'number',
 					integer: true,
