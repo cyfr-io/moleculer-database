@@ -499,22 +499,31 @@ class MongoDBAdapter extends BaseAdapter {
 	}
 
 	processFilterParams(filter) {
-		const finalQuery = filter
-			? Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
-					if (this.service.$fields.some(({ name, filter }) => filter && name === field)) {
-						const { isMatch, values } = valueObj;
-						const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
-						const valuesToProcess = isMatch ? values : valueObj;
-						const processedValues = Array.isArray(valuesToProcess)
-							? valuesToProcess.map((value) => buildMethod(field, value, typeof value))
-							: [buildMethod(field, valuesToProcess, typeof valuesToProcess)];
+		if (!filter) return [];
 
-						queryAccumulator.push(processedValues.length > 1 ? { $or: processedValues } : processedValues[0]);
-					}
-					return queryAccumulator;
-			  }, [])
-			: [];
-		return finalQuery;
+		return Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
+			if (!this.service.$fields.some(({ name, filter }) => filter && name === field)) {
+				// Skip fields that are not allowed for filtering
+				return queryAccumulator;
+			}
+
+			const { isMatch, values } = valueObj;
+			const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
+			const valuesToProcess = isMatch ? values : valueObj;
+			const processedValues = Array.isArray(valuesToProcess)
+				? valuesToProcess.map((value) => buildMethod(field, value, typeof value))
+				: [buildMethod(field, valuesToProcess, typeof valuesToProcess)];
+
+			// Only add non-undefined, valid query objects
+			const validQueries = processedValues.filter((query) => query !== undefined);
+			if (validQueries.length > 1) {
+				queryAccumulator.push({ $or: validQueries });
+			} else if (validQueries.length === 1) {
+				queryAccumulator.push(validQueries[0]);
+			}
+
+			return queryAccumulator;
+		}, []);
 	}
 
 	buildStandardMatch(field, values, type = null) {
