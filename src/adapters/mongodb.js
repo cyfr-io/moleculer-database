@@ -488,6 +488,8 @@ class MongoDBAdapter extends BaseAdapter {
 		const { filter, search, searchFields, query } = params;
 
 		console.log(util.inspect(params, false, null, true /* enable colors */));
+		this.logger.warn('TEST 4');
+		this.logger.warn(util.inspect(params, false, null, true /* enable colors */));
 
 		let cq = [];
 		cq.push(...this.processSearchParams(search, searchFields));
@@ -496,6 +498,8 @@ class MongoDBAdapter extends BaseAdapter {
 
 		cq = cq.length > 0 ? { $and: cq } : {};
 		console.log(util.inspect(cq, false, null, true /* enable colors */));
+		this.logger.warn('TEST 7');
+		this.logger.warn(util.inspect(cq, false, null, true /* enable colors */));
 
 		return cq;
 	}
