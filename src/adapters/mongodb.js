@@ -504,24 +504,26 @@ class MongoDBAdapter extends BaseAdapter {
 		if (!filter) return [];
 
 		return Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
-			if (!this.service.$fields.some(({ name, filter }) => filter && name === field)) {
-				// Skip fields that are not allowed for filtering
+			if (!this.service.$fields.some(({ name, filter }) => filter && name === field) || valueObj === '') {
+				// Skip fields that are not allowed for filtering or have empty values
 				return queryAccumulator;
 			}
 
 			const { isMatch, values } = valueObj;
 			const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
 			const valuesToProcess = isMatch ? values : valueObj;
+			// Ensure we're not processing empty strings unless intentionally handled
+			if (valuesToProcess === '' && !isMatch) return queryAccumulator;
+
 			const processedValues = Array.isArray(valuesToProcess)
-				? valuesToProcess.map((value) => buildMethod(field, value, typeof value))
-				: [buildMethod(field, valuesToProcess, typeof valuesToProcess)];
+				? valuesToProcess.map((value) => buildMethod(field, value, typeof value)).filter((query) => query !== undefined && query !== null)
+				: [buildMethod(field, valuesToProcess, typeof valuesToProcess)].filter((query) => query !== undefined && query !== null);
 
 			// Only add non-undefined, valid query objects
-			const validQueries = processedValues.filter((query) => query !== undefined);
-			if (validQueries.length > 1) {
-				queryAccumulator.push({ $or: validQueries });
-			} else if (validQueries.length === 1) {
-				queryAccumulator.push(validQueries[0]);
+			if (processedValues.length > 1) {
+				queryAccumulator.push({ $or: processedValues });
+			} else if (processedValues.length === 1) {
+				queryAccumulator.push(processedValues[0]);
 			}
 
 			return queryAccumulator;
