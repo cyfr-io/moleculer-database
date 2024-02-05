@@ -487,7 +487,7 @@ class MongoDBAdapter extends BaseAdapter {
 	parseParams(params) {
 		const { filter, search, searchFields, query } = params;
 
-		console.log(util.inspect(params, false, null, true /* enable colors */));
+		// console.log(util.inspect(params, false, null, true /* enable colors */));
 
 		let cq = [];
 		cq.push(...this.processSearchParams(search, searchFields));
@@ -495,7 +495,7 @@ class MongoDBAdapter extends BaseAdapter {
 		if (query) cq.push(query);
 
 		cq = cq.length > 0 ? { $and: cq } : {};
-		console.log(util.inspect(cq, false, null, true /* enable colors */));
+		// console.log(util.inspect(cq, false, null, true /* enable colors */));
 
 		return cq;
 	}
@@ -504,31 +504,24 @@ class MongoDBAdapter extends BaseAdapter {
 		if (!filter) return [];
 
 		return Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
-			// Check if the field value is an empty string and skip it
-			if (valueObj === '' || (typeof valueObj === 'object' && valueObj.values === '')) {
+			if (!this.service.$fields.some(({ name, filter }) => filter && name === field)) {
+				// Skip fields that are not allowed for filtering
 				return queryAccumulator;
 			}
 
-			// Existing logic to determine if field is allowed for filtering
-			if (!this.service.$fields.some(({ name, filterable }) => filterable && name === field)) {
-				return queryAccumulator;
-			}
-
-			// Process the value object or values for building the query
 			const { isMatch, values } = valueObj;
 			const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
-			const valuesToProcess = isMatch ? values : [valueObj];
+			const valuesToProcess = isMatch ? values : valueObj;
+			const processedValues = Array.isArray(valuesToProcess)
+				? valuesToProcess.map((value) => buildMethod(field, value, typeof value))
+				: [buildMethod(field, valuesToProcess, typeof valuesToProcess)];
 
-			// Generate query objects for the current field
-			const processedValues = valuesToProcess
-				.filter((value) => value !== '') // Ensure non-empty values are processed
-				.map((value) => buildMethod(field, value, typeof value))
-				.filter((query) => query !== undefined); // Filter out undefined query objects
-
-			// Add valid queries to the accumulator
-			if (processedValues.length) {
-				// Use $or if multiple values need to be matched, otherwise add single query object
-				queryAccumulator.push(processedValues.length > 1 ? { $or: processedValues } : processedValues[0]);
+			// Only add non-undefined, valid query objects
+			const validQueries = processedValues.filter((query) => query !== undefined);
+			if (validQueries.length > 1) {
+				queryAccumulator.push({ $or: validQueries });
+			} else if (validQueries.length === 1) {
+				queryAccumulator.push(validQueries[0]);
 			}
 
 			return queryAccumulator;
@@ -578,7 +571,6 @@ class MongoDBAdapter extends BaseAdapter {
 		try {
 			return await this.collection.createIndex(fields, def);
 		} catch (err) {
-			console.log(def);
 			this.logger.warn(`Unable to create default Mongo index for collection ${this.opts.collection} with fields "${def.fields}"`);
 			return false;
 		}
