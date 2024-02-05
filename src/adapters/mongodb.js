@@ -487,13 +487,15 @@ class MongoDBAdapter extends BaseAdapter {
 	parseParams(params) {
 		const { filter, search, searchFields, query } = params;
 
+		console.log(util.inspect(params, false, null, true /* enable colors */));
+
 		let cq = [];
 		cq.push(...this.processSearchParams(search, searchFields));
 		cq.push(...this.processFilterParams(filter));
 		if (query) cq.push(query);
 
 		cq = cq.length > 0 ? { $and: cq } : {};
-		// console.log(util.inspect(cq, false, null, true /* enable colors */));
+		console.log(util.inspect(cq, false, null, true /* enable colors */));
 
 		return cq;
 	}
