@@ -504,26 +504,31 @@ class MongoDBAdapter extends BaseAdapter {
 		if (!filter) return [];
 
 		return Object.entries(filter).reduce((queryAccumulator, [field, valueObj]) => {
-			if (!this.service.$fields.some(({ name, filter }) => filter && name === field) || valueObj === '') {
-				// Skip fields that are not allowed for filtering or have empty values
+			// Check if the field value is an empty string and skip it
+			if (valueObj === '' || (typeof valueObj === 'object' && valueObj.values === '')) {
 				return queryAccumulator;
 			}
 
+			// Existing logic to determine if field is allowed for filtering
+			if (!this.service.$fields.some(({ name, filterable }) => filterable && name === field)) {
+				return queryAccumulator;
+			}
+
+			// Process the value object or values for building the query
 			const { isMatch, values } = valueObj;
 			const buildMethod = isMatch ? this.buildStandardMatch : this.buildStandardStrict;
-			const valuesToProcess = isMatch ? values : valueObj;
-			// Ensure we're not processing empty strings unless intentionally handled
-			if (valuesToProcess === '' && !isMatch) return queryAccumulator;
+			const valuesToProcess = isMatch ? values : [valueObj];
 
-			const processedValues = Array.isArray(valuesToProcess)
-				? valuesToProcess.map((value) => buildMethod(field, value, typeof value)).filter((query) => query !== undefined && query !== null)
-				: [buildMethod(field, valuesToProcess, typeof valuesToProcess)].filter((query) => query !== undefined && query !== null);
+			// Generate query objects for the current field
+			const processedValues = valuesToProcess
+				.filter((value) => value !== '') // Ensure non-empty values are processed
+				.map((value) => buildMethod(field, value, typeof value))
+				.filter((query) => query !== undefined); // Filter out undefined query objects
 
-			// Only add non-undefined, valid query objects
-			if (processedValues.length > 1) {
-				queryAccumulator.push({ $or: processedValues });
-			} else if (processedValues.length === 1) {
-				queryAccumulator.push(processedValues[0]);
+			// Add valid queries to the accumulator
+			if (processedValues.length) {
+				// Use $or if multiple values need to be matched, otherwise add single query object
+				queryAccumulator.push(processedValues.length > 1 ? { $or: processedValues } : processedValues[0]);
 			}
 
 			return queryAccumulator;

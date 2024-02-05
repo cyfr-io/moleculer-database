@@ -80,6 +80,9 @@ broker.createService({
 				filter: true,
 			},
 			content: { type: 'string', search: true, filter: true },
+			user: { type: 'string', filter: true },
+			course: { type: 'string', filter: true },
+			status: { type: 'string', filter: true },
 			votes: { type: 'number', integer: true, min: 0, default: 0, columnType: 'int', filter: true },
 			status: { type: 'boolean', default: true },
 			createdAt: {
@@ -170,8 +173,13 @@ broker
 			// search: ['13', '12', '8'],
 			// searchFields: 'title',
 			filter: {
-				title: { match: '9 Num' },
+				// title: { match: '9 Num' },
+				id: '',
+				user: 'f',
+				course: '02523846365732570923664',
+				status: 'active',
 			},
+			sort: '-id',
 		});
 		// console.log('List:', posts);
 		// Get a post by ID
