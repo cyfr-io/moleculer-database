@@ -48,7 +48,7 @@ const broker = new ServiceBroker({
 
 // Create a service
 broker.createService({
-	name: 'tezt',
+	name: 'posts',
 	mixins: [
 		DbService({
 			adapter: {
@@ -64,18 +64,7 @@ broker.createService({
 				type: 'MongoDB',
 			},
 
-			createActions: {
-				create: true,
-				createMany: true,
-				count: false,
-				find: true,
-				list: true,
-				replace: false,
-				remove: false,
-				update: true,
-				updateMany: true,
-				remove: false,
-			},
+			createActions: {},
 		}),
 	],
 
@@ -157,17 +146,17 @@ broker
 		// 	status: false,
 		// });
 		// console.log('3rd post:', post);
-		// let cr = [];
-		// for (let i = 0; i < 25; i++) {
-		// 	cr.push({
-		// 		title: `${i} Numbered Post`,
-		// 		content: `Test content hello`,
-		// 		status: true,
-		// 		votes: i,
-		// 	});
-		// }
-		// let posts;
-		// posts = await broker.call('posts.createMany', cr);
+		let cr = [];
+		for (let i = 0; i < 25; i++) {
+			cr.push({
+				title: `${i} Numbered Post`,
+				content: `Test content hello`,
+				status: true,
+				votes: i,
+			});
+		}
+		let posts;
+		posts = await broker.call('posts.createMany', cr);
 		// console.log('4. & 5. posts:', posts);
 		// await broker.call('posts.updateMany', { query: { votes: 0 }, changes: { content: 'Nigga ' } });
 		// Get all posts
@@ -175,15 +164,15 @@ broker
 		// posts = await broker.call('posts.find', { sort: 'votes', single: true });
 		// console.log('Find:', posts);
 		// List posts with pagination
-		// posts = await broker.call('posts.list', {
-		// 	page: 1,
-		// 	pageSize: 10,
-		// 	// search: ['13', '12', '8'],
-		// 	// searchFields: 'title',
-		// 	filter: {
-		// 		title: { match: '9 Num' },
-		// 	},
-		// });
+		posts = await broker.call('posts.list', {
+			page: 1,
+			pageSize: 10,
+			// search: ['13', '12', '8'],
+			// searchFields: 'title',
+			filter: {
+				title: { match: '9 Num' },
+			},
+		});
 		// console.log('List:', posts);
 		// Get a post by ID
 		// post = await broker.call('posts.get', { id: post.id });
