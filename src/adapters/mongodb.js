@@ -10,6 +10,15 @@ const _ = require('lodash');
 const { flatten } = require('../utils');
 const BaseAdapter = require('./base');
 const Snowflake = require('../snowflake'); // Import the Snowflake class
+const Sentry = require('@sentry/node');
+
+Sentry.init({
+	dsn: 'https://f4b1ed9a12a400381367e6927ef3ad90@o461232.ingest.sentry.io/4506693275287552',
+	// Performance Monitoring
+	tracesSampleRate: 1.0, //  Capture 100% of the transactions
+	// Set sampling rate for profiling - this is relative to tracesSampleRate
+	profilesSampleRate: 1.0,
+});
 
 let MongoClient, ObjectId, SnowflakeId;
 
@@ -487,9 +496,12 @@ class MongoDBAdapter extends BaseAdapter {
 	parseParams(params) {
 		const { filter, search, searchFields, query } = params;
 
-		console.log(util.inspect(params, false, null, true /* enable colors */));
-		this.logger.warn('TEST 4');
-		this.logger.warn(util.inspect(params, false, null, true /* enable colors */));
+		// console.log(util.inspect(params, false, null, true /* enable colors */));
+		// this.logger.warn('TEST 4');
+		// this.logger.warn(util.inspect(params, false, null, true /* enable colors */));
+
+		Sentry.captureMessage('Test 01');
+		Sentry.captureMessage(params);
 
 		let cq = [];
 		cq.push(...this.processSearchParams(search, searchFields));
@@ -497,9 +509,12 @@ class MongoDBAdapter extends BaseAdapter {
 		if (query) cq.push(query);
 
 		cq = cq.length > 0 ? { $and: cq } : {};
-		console.log(util.inspect(cq, false, null, true /* enable colors */));
-		this.logger.warn('TEST 7');
-		this.logger.warn(util.inspect(cq, false, null, true /* enable colors */));
+		// console.log(util.inspect(cq, false, null, true /* enable colors */));
+		// this.logger.warn('TEST 7');
+		// this.logger.warn(util.inspect(cq, false, null, true /* enable colors */));
+
+		Sentry.captureMessage('Test 02');
+		Sentry.captureMessage(cq);
 
 		return cq;
 	}
