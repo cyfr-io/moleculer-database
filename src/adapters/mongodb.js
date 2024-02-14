@@ -529,7 +529,9 @@ class MongoDBAdapter extends BaseAdapter {
 	}
 
 	buildStandardMatch(field, values, type = null) {
-		const regexPattern = Array.isArray(values) ? values.map((value) => `(${value})`).join('|') : values;
+		const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escapes regex special characters
+		const regexPattern = Array.isArray(values) ? values.map((value) => `(${escapeRegex(value)})`).join('|') : escapeRegex(values);
+
 		return type === 'number'
 			? {
 					$expr: {
