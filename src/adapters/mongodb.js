@@ -11,7 +11,7 @@ const { flatten } = require('../utils');
 const BaseAdapter = require('./base');
 const Snowflake = require('../snowflake'); // Import the Snowflake class
 
-let MongoClient, ObjectId, SnowflakeId;
+let MongoClient, GenerateId, SnowflakeId, ObjectId;
 
 class MongoDBAdapter extends BaseAdapter {
 	/**
@@ -62,6 +62,9 @@ class MongoDBAdapter extends BaseAdapter {
 		SnowflakeId = new Snowflake({
 			instanceId: this.broker.instanceId,
 		});
+		GenerateId = () => {
+			return SnowflakeId.generate().toString();
+		};
 
 		this.checkClientLibVersion('mongodb', '^4.0.0');
 	}
@@ -189,7 +192,7 @@ class MongoDBAdapter extends BaseAdapter {
 	/**
 	 * Find an entities by ID.
 	 *
-	 * @param {String|ObjectId} id
+	 * @param {String|Id} id
 	 * @returns {Promise<Object>} Return with the found document.
 	 *
 	 */
@@ -200,7 +203,7 @@ class MongoDBAdapter extends BaseAdapter {
 	/**
 	 * Find entities by IDs.
 	 *
-	 * @param {Array<String|ObjectId>} idList
+	 * @param {Array<String|Id>} idList
 	 * @returns {Promise<Array>} Return with the found documents in an Array.
 	 *
 	 */
@@ -264,10 +267,11 @@ class MongoDBAdapter extends BaseAdapter {
 	 */
 	async insertMany(entities, opts = {}) {
 		const remappedEntities = entities.map((entity) => this.addIdToEntity(entity));
+		const addedIds = remappedEntities.map((entity) => entity.id);
 		try {
 			const res = await this.collection.insertMany(remappedEntities);
 			if (!res.acknowledged) throw new Error('MongoDB insertMany failed.');
-			return opts.returnEntities ? entities : Object.values(res.insertedIds);
+			return opts.returnEntities ? entities : addedIds;
 		} catch (error) {
 			throw new Error('Creating Many Records Failed');
 		}
@@ -436,8 +440,9 @@ class MongoDBAdapter extends BaseAdapter {
 	addIdToEntity(entity) {
 		if (this.service.$primaryField?.generated !== 'user') {
 			const columnName = this.service.$primaryField.columnName;
+			// Use IP Snowflake Id Gen
 			entity = {
-				[columnName]: SnowflakeId.generate().toString(),
+				[columnName]: GenerateId(),
 				...entity,
 			};
 		}

@@ -438,32 +438,36 @@ module.exports = function (mixinOpts) {
 					// Handlers
 					if (!opts.skipOnHooks) {
 						if (type == 'create' && field.onCreate) {
-							if (_.isFunction(field.onCreate)) {
-								value = await this._callCustomFunction(field.onCreate, customArgs);
-							} else {
-								value = field.onCreate;
-							}
+							// if (_.isFunction(field.onCreate)) {
+							// 	value = await this._callCustomFunction(field.onCreate, customArgs);
+							// } else {
+							// 	value = field.onCreate;
+							// }
+							value = await this._callCustomFunction(field.onCreate, customArgs);
 							return setValue(field, value);
 						} else if (type == 'update' && field.onUpdate) {
-							if (_.isFunction(field.onUpdate)) {
-								value = await this._callCustomFunction(field.onUpdate, customArgs);
-							} else {
-								value = field.onUpdate;
-							}
+							// if (_.isFunction(field.onUpdate)) {
+							// 	value = await this._callCustomFunction(field.onUpdate, customArgs);
+							// } else {
+							// 	value = field.onUpdate;
+							// }
+							value = await this._callCustomFunction(field.onUpdate, customArgs);
 							return setValue(field, value);
 						} else if (type == 'replace' && field.onReplace) {
-							if (_.isFunction(field.onReplace)) {
-								value = await this._callCustomFunction(field.onReplace, customArgs);
-							} else {
-								value = field.onReplace;
-							}
+							// if (_.isFunction(field.onReplace)) {
+							// 	value = await this._callCustomFunction(field.onReplace, customArgs);
+							// } else {
+							// 	value = field.onReplace;
+							// }
+							value = await this._callCustomFunction(field.onReplace, customArgs);
 							return setValue(field, value);
 						} else if (type == 'remove' && field.onRemove) {
-							if (_.isFunction(field.onRemove)) {
-								value = await this._callCustomFunction(field.onRemove, customArgs);
-							} else {
-								value = field.onRemove;
-							}
+							// if (_.isFunction(field.onRemove)) {
+							// 	value = await this._callCustomFunction(field.onRemove, customArgs);
+							// } else {
+							// 	value = field.onRemove;
+							// }
+							value = await this._callCustomFunction(field.onRemove, customArgs);
 							return setValue(field, value);
 						}
 					}
