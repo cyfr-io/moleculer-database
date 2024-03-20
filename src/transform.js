@@ -4,15 +4,15 @@
  * MIT Licensed
  */
 
-"use strict";
+'use strict';
 
-const { ServiceSchemaError, ValidationError } = require("moleculer").Errors;
-const _ = require("lodash");
+const { ServiceSchemaError, ValidationError } = require('moleculer').Errors;
+const _ = require('lodash');
 
 function deepResolve(values, resolvedObj) {
 	if (!resolvedObj) return values;
 
-	return values.map(v => {
+	return values.map((v) => {
 		if (v != null) {
 			if (Array.isArray(v)) return deepResolve(v, resolvedObj);
 			else {
@@ -47,10 +47,10 @@ module.exports = function (mixinOpts) {
 				}
 			}
 
-			const span = this.startSpan(ctx, "Transforming result", { params });
+			const span = this.startSpan(ctx, 'Transforming result', { params });
 
 			if (!adapter) adapter = await this.getAdapter(ctx);
-			docs = docs.map(doc => adapter.entityToJSON(doc));
+			docs = docs.map((doc) => adapter.entityToJSON(doc));
 
 			if (this.$fields) {
 				docs = await this._transformFields(adapter, docs, params, ctx);
@@ -73,11 +73,11 @@ module.exports = function (mixinOpts) {
 			let customFieldList = false;
 			let selectedFields = this.$fields;
 			if (Array.isArray(params.fields)) {
-				selectedFields = this.$fields.filter(f => params.fields.includes(f.name));
+				selectedFields = this.$fields.filter((f) => params.fields.includes(f.name));
 				customFieldList = true;
 			}
 			const authorizedFields = await this._authorizeFields(selectedFields, ctx, params, {
-				isWrite: false
+				isWrite: false,
 			});
 
 			const res = Array.from(docs).map(() => ({}));
@@ -88,21 +88,21 @@ module.exports = function (mixinOpts) {
 			else if (Array.isArray(params.populate)) needPopulates = params.populate;
 
 			await Promise.all(
-				authorizedFields.map(async field => {
+				authorizedFields.map(async (field) => {
 					if (field.hidden === true) return;
-					else if (field.hidden == "byDefault" && !customFieldList) return;
+					else if (field.hidden == 'byDefault' && !customFieldList) return;
 
 					// Field values
-					let values = docs.map(doc => _.get(doc, field.columnName));
+					let values = docs.map((doc) => _.get(doc, field.columnName));
 
 					if (!adapter.hasNestedFieldSupport) {
-						if (field.type == "array" || field.type == "object") {
-							values = values.map(v => {
-								if (typeof v === "string") {
+						if (field.type == 'array' || field.type == 'object') {
+							values = values.map((v) => {
+								if (typeof v === 'string') {
 									try {
 										return JSON.parse(v);
 									} catch (e) {
-										this.logger.warn("Unable to parse the JSON value", v);
+										this.logger.warn('Unable to parse the JSON value', v);
 									}
 								}
 								return v;
@@ -111,24 +111,15 @@ module.exports = function (mixinOpts) {
 					}
 
 					// Populating
-					if (
-						field.populate &&
-						needPopulates != null &&
-						needPopulates.includes(field.name)
-					) {
+					if (field.populate && needPopulates != null && needPopulates.includes(field.name)) {
 						if (field.populate.keyField) {
 							// Using different field values as key values
-							const keyField = this.$fields.find(
-								f => f.name == field.populate.keyField
-							);
+							const keyField = this.$fields.find((f) => f.name == field.populate.keyField);
 							if (!keyField) {
-								throw new ServiceSchemaError(
-									`The 'keyField' is not exist in populate definition of '${field.name}' field.`,
-									{ field }
-								);
+								throw new ServiceSchemaError(`The 'keyField' is not exist in populate definition of '${field.name}' field.`, { field });
 							}
 
-							values = docs.map(doc => _.get(doc, keyField.columnName));
+							values = docs.map((doc) => _.get(doc, keyField.columnName));
 						}
 
 						const resolvedObj = await this._populateValues(field, values, docs, ctx);
@@ -139,26 +130,22 @@ module.exports = function (mixinOpts) {
 					}
 
 					// Virtual or formatted field
-					if (_.isFunction(field.get)) {
+					if (field.get) {
 						values = await Promise.all(
-							values.map(async (value, i) =>
-								this._callCustomFunction(field.get, [
-									{ value, entity: docs[i], field, ctx }
-								])
-							)
+							values.map(async (value, i) => this._callCustomFunction(field.get, [{ value, entity: docs[i], field, ctx }])),
 						);
 					}
 
 					// Secure ID field
 					if (field.secure) {
-						values = values.map(v => this.encodeID(v));
+						values = values.map((v) => this.encodeID(v));
 					}
 
 					// Set values to result
 					res.map((doc, i) => {
 						if (values[i] !== undefined) _.set(doc, field.name, values[i]);
 					});
-				})
+				}),
 			);
 
 			return res;
@@ -187,10 +174,10 @@ module.exports = function (mixinOpts) {
 				...(rule.params || {}),
 				id: values,
 				mapping: true,
-				throwIfNotExist: false
+				throwIfNotExist: false,
 			};
 
 			return await (ctx || this.broker).call(rule.action, params, rule.callOptions);
-		}
+		},
 	};
 };
