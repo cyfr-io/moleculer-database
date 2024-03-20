@@ -437,7 +437,10 @@ module.exports = function (mixinOpts) {
 
 					// Handlers
 					if (!opts.skipOnHooks) {
-						if (type == 'create' && field.onCreate) {
+						if (type == 'create' || (type == 'update' && field.onChange)) {
+							value = await this._callCustomFunction(field.onChange, customArgs);
+							return setValue(field, value);
+						} else if (type == 'create' && field.onCreate) {
 							// if (_.isFunction(field.onCreate)) {
 							// 	value = await this._callCustomFunction(field.onCreate, customArgs);
 							// } else {
