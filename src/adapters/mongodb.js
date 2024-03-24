@@ -271,7 +271,7 @@ class MongoDBAdapter extends BaseAdapter {
 		try {
 			const res = await this.collection.insertMany(remappedEntities);
 			if (!res.acknowledged) throw new Error('MongoDB insertMany failed.');
-			return opts.returnEntities ? entities : addedIds;
+			return opts.returnEntities ? remappedEntities : addedIds;
 		} catch (error) {
 			throw new Error('Creating Many Records Failed');
 		}

@@ -13,6 +13,7 @@ const { MoleculerClientError } = require('moleculer').Errors;
 const { Transform } = require('stream');
 const _ = require('lodash');
 const C = require('./constants');
+const pkg = require('../package.json');
 
 module.exports = function (mixinOpts) {
 	const cacheOpts = mixinOpts.cache && mixinOpts.cache.enabled ? mixinOpts.cache : null;
@@ -47,7 +48,8 @@ module.exports = function (mixinOpts) {
 			await this.maintenanceAdapters();
 			// Wait for real connect
 			await connectPromise;
-			this.logger.info(`Adapter '${hash}' connected. Number of adapters:`, this.adapters.size);
+			this.logger.info(`Cm2 DB Client - Version: ${pkg.version}`);
+			this.logger.info(`Cm2 DB Adapter '${hash}' connected. Number of adapters:`, this.adapters.size);
 			// Clean the connect promise
 			delete storedAdapterItem.connectPromise;
 
